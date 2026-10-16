@@ -1,0 +1,36 @@
+{
+  "name": "claude-say-framework",
+  "private": true,
+  "version": "1.0.0",
+  "license": "MIT",
+  "author": "Sparrived",
+  "description": "ClaudeSay 视频制作框架：Clawd（Claude Code 的橙色像素小人）当讲解员、纯代码编写与渲染的讲解动画 —— GSAP 时间轴 + KaTeX + D3 + Web Audio 配乐，Puppeteer + FFmpeg 导出 MP4",
+  "type": "module",
+  "scripts": {
+    "new": "node scripts/new.mjs",
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc",
+    "render": "node scripts/render.mjs",
+    "audio": "node scripts/audio.mjs",
+    "score": "node scripts/score-report.mjs",
+    "cover": "node scripts/cover.mjs",
+    "snap": "node scripts/snap.mjs",
+    "sheet": "node scripts/sheet.mjs"
+  },
+  "dependencies": {
+    "@fontsource/maple-mono": "^5.3.0",
+    "@fontsource/noto-sans-sc": "^5.3.1",
+    "d3": "^7.9.0",
+    "figlet": "^1.12.0",
+    "gsap": "^3.15.0",
+    "katex": "^0.19.0"
+  },
+  "devDependencies": {
+    "@types/d3": "^7.4.3",
+    "puppeteer-core": "^25.14.0",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.4"
+  }
+}

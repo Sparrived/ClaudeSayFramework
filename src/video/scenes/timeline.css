@@ -1,0 +1,105 @@
+/* ── 时间轴（timeline）：类名都带 tl- 前缀，前面加 .scene-timeline 免得和别的章串味 ── */
+
+/* 轨道：(left, top) 是左端的中线 */
+.scene-timeline .tl-track {
+  height: 12px;
+  margin-top: -6px;
+  border-radius: 6px;
+  background: var(--line);
+}
+.scene-timeline .tl-seg {
+  height: 36px;
+  margin: -18px 0 0 2px;
+  border: 2px solid var(--line);
+  border-radius: 8px;
+  background: var(--ink-2);
+}
+/* 不透明的底色（ink-2 混 24% 的橙）：别让下面的轨道透出来 */
+.scene-timeline .tl-seg.now {
+  border-color: var(--clawd);
+  background: #533b32;
+}
+.scene-timeline .tl-seg-l {
+  font-size: 26px;
+}
+.scene-timeline .tl-seg-l.now {
+  color: var(--clawd);
+  font-weight: 700;
+}
+
+/* 车道 */
+.scene-timeline .tl-lane {
+  stroke: var(--line);
+  stroke-width: 2;
+  stroke-dasharray: 4 8;
+}
+.scene-timeline .tl-lane-l {
+  font-size: 26px;
+}
+.scene-timeline .tl-say,
+.scene-timeline .tl-beat {
+  height: 30px;
+  translate: 0 -50%;
+}
+.scene-timeline .tl-say {
+  border-radius: 15px;
+  background: rgba(177, 185, 249, 0.78);
+}
+.scene-timeline .tl-beat {
+  border-radius: 6px;
+  background: rgba(78, 186, 101, 0.72);
+}
+
+/* 播放头：一根竖线，顶上一个方块 */
+.scene-timeline .tl-head {
+  width: 4px;
+  margin-left: -2px;
+  background: var(--clawd);
+}
+.scene-timeline .tl-head i {
+  position: absolute;
+  left: 50%;
+  top: -18px;
+  width: 22px;
+  height: 22px;
+  translate: -50% 0;
+  background: var(--clawd);
+}
+
+/* d.say() / d.beat() */
+.scene-timeline .tl-code {
+  height: 72px;
+  padding: 0 28px;
+  font-size: 34px;
+}
+.scene-timeline .tl-code-say {
+  border-color: var(--q);
+  color: var(--q);
+}
+.scene-timeline .tl-code-beat {
+  border-color: var(--k);
+  color: var(--k);
+}
+
+/* 胶片 */
+.scene-timeline .tl-frame {
+  width: 100px;
+  height: 56px;
+  border: 2px solid var(--line);
+  border-radius: 6px;
+  background: var(--ink-2);
+}
+.scene-timeline .tl-frame i {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  background: var(--clawd);
+}
+.scene-timeline .tl-count {
+  translate: -50% 0;
+  color: var(--clawd);
+  font: 600 64px/1 var(--mono);
+}
+.scene-timeline .tl-count-l {
+  font-size: 24px;
+}

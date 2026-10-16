@@ -1,0 +1,28 @@
+/* ── 公式与图表（math）：类名都带 ma- 前缀 ── */
+
+/* 热力图格子里的数字：比默认（格宽的 0.4）小一点，四个字符的负数也放得下 */
+.scene-math .hc {
+  font-size: 24px;
+}
+.scene-math .ma-cap {
+  font-size: 26px;
+}
+
+/* 温度那一段 */
+.scene-math .ma-tau {
+  color: var(--fg);
+  font-size: 52px;
+  font-weight: 600;
+}
+.scene-math .ma-val {
+  fill: var(--fg);
+  font: 600 28px var(--mono);
+}
+.scene-math .ma-x {
+  fill: var(--dim);
+  font: 24px var(--mono);
+}
+.scene-math .ma-base {
+  stroke: var(--dim);
+  stroke-width: 2;
+}

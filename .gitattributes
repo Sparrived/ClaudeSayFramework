@@ -1,0 +1,5 @@
+# 源码统一用 LF（Windows 上也一样），免得每次拷贝 / 同步引擎时出现整文件的换行符差异
+* text=auto eol=lf
+*.png binary
+*.mp4 binary
+*.pdf binary

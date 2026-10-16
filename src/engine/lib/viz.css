@@ -1,0 +1,78 @@
+/* ── 通用图元（lib/viz.ts）────────────────── */
+.fx {
+  left: 0;
+  top: 0;
+  overflow: visible;
+  pointer-events: none;
+}
+.chip {
+  translate: -50% -50%;
+  display: grid;
+  place-items: center;
+  min-width: 100px;
+  height: 66px;
+  padding: 0 20px;
+  border: 2px solid var(--line);
+  border-radius: 12px;
+  background: var(--ink-2);
+  font-size: 32px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.chip.mono {
+  font-family: var(--mono);
+  font-size: 30px;
+  font-weight: 400;
+}
+.chip.mini {
+  min-width: 0;
+  height: 20px;
+  padding: 0 8px;
+  border-width: 1px;
+  border-radius: 4px;
+  font-size: 15px;
+}
+.chip.bad {
+  border-color: var(--red);
+  color: var(--red);
+}
+.box {
+  translate: -50% -50%;
+  display: grid;
+  place-items: center;
+  border: 2px solid var(--line);
+  border-radius: 12px;
+  color: var(--dim);
+  font: 24px var(--mono);
+}
+.label {
+  color: var(--dim);
+  font-size: 24px;
+  white-space: nowrap;
+}
+.label.anchor-c {
+  translate: -50% -50%;
+}
+.label.anchor-l {
+  translate: 0 -50%;
+}
+.label.anchor-r {
+  translate: -100% -50%;
+}
+.mono {
+  font-family: var(--mono);
+}
+.faint {
+  color: var(--faint);
+}
+.dot {
+  left: 0;
+  top: 0;
+  width: 14px;
+  height: 14px;
+  translate: -50% -50%;
+  background: var(--clawd);
+}
+.axis {
+  font-size: 20px;
+}

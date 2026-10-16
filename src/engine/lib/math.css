@@ -1,0 +1,155 @@
+/* ── 公式 ──────────────────────────────────── */
+.formula-at {
+  white-space: nowrap;
+}
+.formula-at.anchor-c {
+  translate: -50% -50%;
+}
+.formula-at.anchor-l {
+  translate: 0 -50%;
+}
+.formula-at.anchor-r {
+  translate: -100% -50%;
+}
+.tex .katex-display {
+  margin: 0;
+}
+.tex .katex {
+  font-size: 1em;
+}
+/* 公式里的中文（\text{…}）回退到思源黑体，而不是系统的宋体 */
+.katex {
+  font-family: KaTeX_Main, 'Noto Sans SC', 'Times New Roman', serif;
+}
+
+/* ── 热力图 ────────────────────────────────── */
+.heat {
+  position: absolute;
+}
+.heat .hc {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  border-radius: 3px;
+  color: var(--fg);
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+}
+/* 矩阵两侧的方括号 */
+.heat-br::before,
+.heat-br::after {
+  content: '';
+  position: absolute;
+  opacity: var(--br, 1);
+  top: -10px;
+  bottom: -10px;
+  width: 12px;
+  border: 3px solid var(--dim);
+}
+.heat-br::before {
+  left: -20px;
+  border-right: 0;
+}
+.heat-br::after {
+  right: -20px;
+  border-left: 0;
+}
+
+/* ── 矩阵形状块 ────────────────────────────── */
+.mblock {
+  border-radius: 6px;
+  background-image:
+    linear-gradient(rgba(31, 30, 29, 0.35) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(31, 30, 29, 0.35) 1px, transparent 1px);
+  box-shadow: inset 0 0 0 2px rgba(31, 30, 29, 0.45);
+}
+.mb-name {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
+  color: var(--ink);
+  font: 700 30px var(--serif);
+  font-style: italic;
+  white-space: nowrap;
+  text-shadow: 0 0 6px rgba(255, 255, 255, 0.35);
+}
+.mb-dims {
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  translate: -50% 10px;
+  color: var(--dim);
+  font: 22px var(--mono);
+  white-space: nowrap;
+}
+
+/* ── 坐标图 ────────────────────────────────── */
+.plot .axis-line {
+  stroke: var(--dim);
+  stroke-width: 2;
+}
+.plot .grid-line {
+  stroke: var(--line);
+  stroke-width: 1;
+  stroke-dasharray: 4 6;
+}
+.plot .tick-text {
+  fill: var(--dim);
+  font: 20px var(--mono);
+}
+.plot .axis-title {
+  fill: var(--dim);
+  font: 22px var(--sans);
+}
+.fx text {
+  font-family: var(--sans);
+}
+
+/* ── 面板 ──────────────────────────────────── */
+.panel {
+  translate: -50% -50%;
+  padding: 34px 34px 28px;
+  border: 2px solid var(--line);
+  border-radius: 18px;
+  background: rgba(41, 40, 38, 0.92);
+}
+.panel-title {
+  position: absolute;
+  top: -0.8em;
+  left: 28px;
+  padding: 0 12px;
+  background: var(--ink);
+  font: 24px var(--mono);
+  white-space: nowrap;
+}
+
+/* ── 数据表 ────────────────────────────────── */
+.table {
+  translate: -50% -50%;
+  font-size: 24px;
+}
+.table .tr {
+  display: flex;
+  border-bottom: 1px solid var(--line);
+}
+.table .tr.th {
+  border-bottom: 2px solid var(--dim);
+  color: var(--dim);
+  font-size: 21px;
+}
+.table .tc {
+  padding: 10px 14px;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.table .tc-l {
+  text-align: left;
+}
+.table .tc-c {
+  text-align: center;
+}
+.table .tc-r {
+  text-align: right;
+  font-family: var(--mono);
+}

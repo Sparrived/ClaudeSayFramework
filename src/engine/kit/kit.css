@@ -1,0 +1,130 @@
+/* ── shell 提示符（片头、片尾）────────────── */
+.shell {
+  font: 30px var(--mono);
+  white-space: pre;
+}
+.sh-path {
+  color: var(--teal);
+}
+.sh-arrow {
+  color: var(--k);
+}
+
+/* ── Claude Code 欢迎框（片头）────────────── */
+.welcome {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 58px 0 42px;
+  border: 2px solid var(--clawd);
+  border-radius: 20px;
+}
+.welcome-title {
+  position: absolute;
+  top: -0.72em;
+  left: 40px;
+  padding: 0 12px;
+  background: var(--ink);
+  color: var(--clawd);
+  font: 26px var(--mono);
+  white-space: pre;
+}
+.welcome-hi {
+  font: 600 34px var(--mono);
+}
+.welcome-meta {
+  color: var(--dim);
+  font: 22px var(--mono);
+  line-height: 1.6;
+  text-align: center;
+}
+
+/* ── 片名卡的副题 ──────────────────────────── */
+.title-sub {
+  translate: -50% 0;
+  font: 700 50px var(--sans);
+  letter-spacing: 0.12em;
+  white-space: nowrap;
+}
+
+/* ── 片尾卡 ────────────────────────────────── */
+.end-thanks {
+  translate: -50% -50%;
+  font: 700 84px/1.1 var(--sans);
+  letter-spacing: 0.1em;
+  white-space: nowrap;
+}
+.end-cite {
+  translate: -50% -50%;
+  color: var(--dim);
+  font: italic 30px var(--serif);
+  white-space: nowrap;
+}
+
+/* ── 论文首页（kit/paper.ts）──────────────── */
+.paper-page {
+  padding: 44px 48px 0 76px;
+  overflow: hidden;
+  border-radius: 4px;
+  background: #f4f1ea;
+  color: #1d1b19;
+  font-family: 'Times New Roman', 'Liberation Serif', 'Nimbus Roman', var(--serif), serif;
+  box-shadow:
+    0 34px 80px rgba(0, 0, 0, 0.55),
+    0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+.pp-stamp {
+  position: absolute;
+  left: 30px;
+  top: 50%;
+  translate: 0 -50%;
+  rotate: 180deg;
+  writing-mode: vertical-rl;
+  color: #8d897f;
+  font-size: 20px;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+.pp-title {
+  margin: 0 0 20px;
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1.34;
+  text-align: center;
+  text-wrap: balance;
+}
+.pp-authors {
+  margin: 0 0 3px;
+  font-size: 22px;
+  line-height: 1.35;
+  text-align: center;
+}
+.pp-affil {
+  margin: 0 0 26px;
+  color: #5c584f;
+  font-size: 21px;
+  font-style: italic;
+  line-height: 1.35;
+  text-align: center;
+}
+.pp-abs-h {
+  margin: 18px 0 10px;
+  font-size: 26px;
+  font-weight: 700;
+  text-align: center;
+}
+.pp-abs {
+  margin: 0 30px;
+  font-size: 22px;
+  font-style: italic;
+  line-height: 1.46;
+  text-align: justify;
+}
+/* 荧光笔：背景从 0% 扫到 100%（sweep） */
+.pp-hl {
+  margin: 0 -4px;
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: linear-gradient(var(--hl), var(--hl)) no-repeat 0 0 / 0% 100%;
+}
