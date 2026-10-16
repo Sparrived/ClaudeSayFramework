@@ -9,6 +9,6 @@ ClaudeSay 系列讲解视频的制作框架本身：引擎（`src/engine/`）+ �
   别让新片因为“引擎里有现成的”就少了为题目专门设计的画面。
 - **示例片是引擎的回归测试**：引擎加了新功能，最好在示例片里用一次。改完至少跑一遍
   `npm run typecheck`、`npm run score`、`npm run snap -- <几个时刻>` 看截图；动到导出流程时再跑 `npm run render`。
-- 视频项目里做的通用改进，会从项目里 `npm run engine -- push` 回到这里；推回来之后照上面检查一遍。
+- 视频项目里做的通用改进，用 `npm run engine -- push` 提交：push 会在框架仓库开一个 PR，人工审阅合并后再照上面检查一遍。
 
 @GUIDE.md

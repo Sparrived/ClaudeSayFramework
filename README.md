@@ -69,7 +69,7 @@ src/
 └── cover.ts         封面入口
 scripts/
 ├── new.mjs          开新片（只在框架里有）
-├── engine.mjs       视频项目和框架之间同步引擎（status / diff / pull / push）
+├── engine.mjs       视频项目和框架之间同步引擎：status / diff / pull / push（开 PR 等人工审阅） / pr
 ├── render.mjs       并行逐帧导出 MP4
 ├── audio.mjs        只重做音轨
 ├── snap.mjs · sheet.mjs · score-report.mjs · cover.mjs
@@ -77,7 +77,7 @@ scripts/
 ```
 
 每个视频项目里都有一份完整的引擎拷贝，所以项目能单独运行、单独发布；某一期给引擎做了通用的改进，
-用 `npm run engine -- push` 还给框架，其他项目再 `pull` 过去。
+用 `npm run engine -- push` 在框架仓库开一个 PR，人工审阅合并后，其他项目 `npm run engine -- pull --fetch` 就能拿到。
 
 ## 环境
 

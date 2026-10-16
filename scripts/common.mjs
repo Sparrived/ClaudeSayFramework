@@ -1,6 +1,6 @@
 // 各个脚本共用的小工具：命令行参数、临时的 Vite 服务器、ffmpeg
+// 注意：vite 在这里是惰性引入的 —— engine.mjs 只要有 node 就能跑（新克隆还没 npm install 时也能同步引擎）
 import { spawn } from 'node:child_process'
-import { createServer } from 'vite'
 
 const args = process.argv.slice(2)
 
@@ -29,6 +29,7 @@ export function positional(valueFlags = []) {
  * 中间产物写在 out/、截图写在 shots/，别让 vite 的 watcher 去盯（会刷 EBUSY 报错）。
  */
 export async function startServer() {
+  const { createServer } = await import('vite')
   const server = await createServer({
     server: { port: 5199, strictPort: false, watch: { ignored: ['**/out/**', '**/shots/**', '**/.work/**'] } },
     logLevel: 'warn',

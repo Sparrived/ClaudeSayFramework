@@ -19,8 +19,8 @@
   Frobenius 内积的几何读数、蒙特卡洛直方图里方差的收拢（MixA）。新片也应该有这样的画面。
 - **引擎要越用越丰富。** 鼓励每一期都给引擎添东西：新的图元和可视化、新的动画手法、Clawd 的新表情 / 动作 / 道具、
   新的音效和配器、新的成套画面、新的版式。只要能按时间轴的当前时刻画出来（`d.hook`），新技术也可以引进来：Canvas、WebGL / 3D、物理模拟（可以像 MixA 那期的蒙特卡洛一样，先用脚本算好结果再画）……
-  做法：先在 `src/video/` 里做出来；觉得别的题目也用得上，就整理成通用的接口搬进 `src/engine/`，用 `npm run engine -- push` 还给框架（第 9 节），
-  下一期就能直接用。引擎现有的功能不好用、不好看，也可以改，改完让示例片和其他项目 pull 之后照样能跑就行。
+  做法：先在 `src/video/` 里做出来；觉得别的题目也用得上，就整理成通用的接口搬进 `src/engine/`，用 `npm run engine -- push` 还给框架（开 PR 等人工审阅合并，第 9 节），
+  合并之后下一期就能直接用。引擎现有的功能不好用、不好看，也可以改，改完让示例片和其他项目 pull 之后照样能跑就行。
 - **需要守住的只有两样。** 一是第 3 节的技术规矩（一切排在可以 seek 的时间轴上、结果确定可复现——拖进度条和逐帧导出都靠它）；
   二是系列感（Clawd 和终端界面的样子，敲 `claude` 开场、`/exit` 收尾的套路；套路里面的内容每期都可以不一样）。
   除此之外，版式、颜色的含义、节奏、画面风格，都可以按题目重新设计。
@@ -58,7 +58,7 @@ scripts/                    render · audio · snap · sheet · score-report · 
    前两期的完整场景在 `../ClaudeSayTransformer`（科普，13 章）和 `../ClaudeSayPaper`（论文精读，数学可视化），可以看看它们怎样为题目专门造画面。
 4. 边写边看：`npm run dev`（URL 加 `?ch=章节id` 直接跳到那一章）；`npm run snap` 截图核对版面；`npm run typecheck`。
 5. 收尾：`npm run score`（配乐自检）→ `npm run render`（成片）→ `npm run cover`（封面）→ 补 README 的章节表。
-6. 回顾这一期新做的画面和工具：别的题目也用得上的，整理进 `src/engine/`，`npm run engine -- push` 还给框架（第 9 节）。
+6. 回顾这一期新做的画面和工具：别的题目也用得上的，整理进 `src/engine/`，`npm run engine -- push` 还给框架——push 会开一个 PR 等人工审阅合并（第 9 节）。
 
 ## 3. 一章怎么写
 
@@ -232,7 +232,7 @@ music: {
 | `npm run render` | 导出 `out/<slug>.mp4`（30fps，6 段并行）。`--fps 60` `--workers 8` `--from 120 --to 150 --out out/part.mp4` `--mute` `--keep-parts` |
 | `npm run audio` | 只重做音轨、重新封装（视频时长和当前动画对不上会拒绝）。`--wav out/a.wav --only music` 只导出 WAV |
 | `npm run cover` | 导出封面：`out/cover-4x3.png`（1920×1440，B 站投稿上传用）、`out/cover-16x10.png`（1920×1200）、`out/cover-16x9.png`（1920×1080） |
-| `npm run engine` | 和框架对比引擎文件；`-- diff` / `-- pull` / `-- push` |
+| `npm run engine` | 和框架对比引擎文件：不给子命令就列出不一样的文件 + 框架仓库状态；`-- diff` / `-- pull [--fetch]` / `-- push`（默认开 PR，`--local` 直接改框架） / `-- pr [--all] [--web]` |
 | `npm run new -- <目录>` | （只在框架里）开一个新的视频项目 |
 
 场景构建出错时，`render` / `audio` 会列出错误并中止（`--force` 硬导出）；开发时错误只影响那一章，其他章照常排。
@@ -262,12 +262,39 @@ music: {
 `src/engine/`、`src/main.ts`、`src/cover.ts`、`scripts/`、`index.html`、`cover.html`、`tsconfig.json`、`public/clawd.svg`、`GUIDE.md`、`.gitignore`、`.gitattributes`。
 `src/video/`、`package.json`、`vite.config.ts`、README、CLAUDE.md 是每个项目自己的，永远不同步。
 
-- `npm run engine`：列出和框架不一样的文件（框架位置记在 `package.json` 的 `claudeSay.framework`）。
-- `npm run engine -- pull`：框架有更新，拿过来。只覆盖有差异的文件，不删除任何文件。
-- `npm run engine -- push`：这一期给引擎做了**通用的**改进（新的图元、新的动画手法、修了 bug），还给框架。每一期都应该有东西可以还回去（第 0 节）。
+- `npm run engine`：默认子命令。列出和框架不一样的文件，再打印框架仓库的状态：分支 @ 短 commit、远端 URL、`gh` 可不可用。
+  框架本地落后远端、或者框架工作区里有未提交的引擎改动时，会额外提示一句。
+  框架位置记在 `package.json` 的 `claudeSay.framework`。
+- `npm run engine -- diff [文件…]`：逐行对比（左边框架，右边本项目）。
+- `npm run engine -- pull [文件…]`：框架有更新，拿过来。只覆盖有差异的文件，不删除任何文件。
+  不带 `--fetch` 时只和框架**工作区里的文件**比；框架本地落后远端时会提示先 `git pull`，或者用 `pull --fetch`。
+  加 `--fetch`：先 `git fetch` 框架的远端；框架正停在远端默认分支上时，再顺手 `git merge --ff-only <远端>/<默认分支>` 让工作区跟上，
+  别人刚合并回来的 PR 要这样才看得到、拿得到。fetch 失败只警告；框架不在默认分支上、或者快进不了，就提示人工处理。
+  拿过来的文件如果在框架工作区里还是没提交的草稿，会额外提示一句「不是已合并的版本」：想只拿已合并的版本，先在框架目录把改动提交或收起来，再用 `--fetch`。
+- `npm run engine -- push [文件…]`：这一期给引擎做了**通用的**改进（新的图元、新的动画手法、修了 bug），还给框架。每一期都应该有东西可以还回去（第 0 节）。
   只和这一期内容有关的东西（专用的颜色、只讲这个题目的组件）留在 `src/video/` 里，不要放进引擎。
-- push 之后回到框架目录检查一遍：`npm run typecheck`、`npm run score`、`npm run snap` 看几个时刻；
-  新功能最好在框架的示例片里用一次，示例片同时是引擎的回归测试。引擎用到新的依赖时，两边的 `package.json` 都要加。
+  **push 默认开 PR，不直接改框架**；`--local` 是逃生口：直接把文件覆盖进框架（新依赖也会写进框架的 `package.json`），跳过人工审阅，留给框架不是 git 仓库 / 离线的情况。
+  其他参数：`--force`（文件还是框架的旧版本时也硬推，见下面第 2 步）、`--dry`（只准备分支和提交，打印 diffstat 和提交信息，不推送）、
+  `--keep`（临时 worktree 留着不删）、`--no-fetch`（不先 fetch 框架的远端）、`--no-pr`（只推分支不开 PR）、`--draft`（draft PR）、
+  `--base <分支>`、`--remote <名字>`、`--repo <owner/name>`、`--type <类型>`（默认 `feat`）、`--title <标题>`、`--gh <命令>`。
+- `npm run engine -- pr [--all] [--web]`：看从作品推回来的引擎 PR，默认只列开着的；`--all` 连已合并 / 已关闭的一起看，`--web` 用浏览器打开。
+- `--from <路径>`：所有子命令通用。不写就读 `package.json` 的 `claudeSay.framework`；用它临时指向别的框架位置（比如不是 `npm run new` 开出来的老项目）。
+
+`push` 的流程：
+
+1. 以 `<远端>/<默认分支>`（一般 `origin/main`）为基础，在框架仓库里开一个临时 worktree。框架当前的工作区和当前分支一概不动；
+2. 有差异的引擎文件拷进 worktree。项目里有、框架里完全没有的新依赖会一并写进框架的 `package.json`，跟着 PR 一起审；
+   某个文件在本项目里还是框架的旧版本（没 pull 过）时，会跳过它并警告——照它推上去会把框架后来的改动删掉；先 `pull --fetch` 再 push，确定要覆盖就加 `--force`；
+   缺的框架行如果在你这份里能找到长得很像的行（被你改写了），就不算丢失、也不提醒；只有「缺行最少」的那一版明显早于 PR 的基础版本时才提醒，而且不跳过——打印「框架现有版本里有、你这边没有的行，PR 会把它们删掉」，PR 正文里也带一句（文件 少 N 行，审阅时确认是不是有意的）；先 `pull --fetch` 合一次更稳妥，确属有意删除就照推；
+3. 提交到 `engine/<项目名>-<YYYYMMDD-HHmm>` 分支，中文 Conventional Commits（`feat(engine): 从 <项目名> 还回引擎改进`），正文列出文件清单和来源路径；
+4. 推分支 + `gh pr create`。PR 正文含文件清单、diffstat 和审阅清单；
+5. 远端不是 GitHub 或者 `gh` 不可用：分支照样推上去，打印 compare 链接让人工点。推送失败：分支和提交留在框架仓库里，并打印重推命令；
+6. 结束后删掉临时 worktree；本地临时分支只留推送失败那一种（方便人工重推），推成功的只剩远端的，PR 上还能看到；
+7. 人工在 GitHub 上合并之后，其他项目 `npm run engine -- pull --fetch` 就能拿到。
+
+审阅 PR 时顺手跑一遍（框架的示例片同时是引擎的回归测试）：`npm run typecheck`、`npm run score`、`npm run snap -- <几个时刻>` 看截图；
+动到导出流程时 `npm run render`；新功能最好在框架的示例片 `src/video/` 里用一次。
+引擎用到的新依赖 push 会自动写进框架的 `package.json`，不然框架那边跑不起来；两边版本号不一致的只列出来，人工决定。
 
 ## 10. 发布（系列的约定）
 

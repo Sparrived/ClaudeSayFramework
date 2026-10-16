@@ -115,7 +115,7 @@ npm run score                        # 配乐结构报告与自检
 npm run render                       # 导出 out/${slug}.mp4（30fps，6 段并行）
 npm run audio                        # 只重做音轨并重新封装
 npm run cover                        # 导出封面 out/cover-4x3.png（B 站上传用）、cover-16x10.png、cover-16x9.png
-npm run engine                       # 和框架对比引擎文件（pull / push 同步）
+npm run engine                       # 和框架对比引擎文件；push 在框架仓库开 PR 等人工审阅，pull 拿框架的更新
 \`\`\`
 
 ## 章节大纲
@@ -135,7 +135,7 @@ writeFileSync(
 
 这是用 ClaudeSayFramework（${ROOT.replace(/\\/g, '/')}）开出来的视频项目。
 框架的用法、API、约定和制作流程都在 GUIDE.md 里（下面整篇引入）。
-src/engine/、scripts/、入口文件和 GUIDE.md 是框架的拷贝：通用的改进记得用 npm run engine -- push 还给框架。
+src/engine/、scripts/、入口文件和 GUIDE.md 是框架的拷贝：通用的改进记得用 npm run engine -- push 还给框架（push 会开 PR，人工审阅合并）。
 引擎只是起点（GUIDE.md 第 0 节）：这一期的画面按题目重新设计，引擎里没有的就自己做，做出来的通用零件还给框架。
 
 @GUIDE.md
@@ -165,5 +165,5 @@ console.log(`
   1. 改 src/video/config.ts：片名、进度标尺、配乐、封面
   2. 先为题目设计画面，再把 src/video/scenes/ 里的示例章节换成自己的（第一章用 opening()，最后一章用 ending()）
   3. npm run dev 边写边看；npm run render 导出成片
-  4. 做完回顾一下：新做的通用零件 npm run engine -- push 还给框架（GUIDE.md 第 0、9 节）
+  4. 做完回顾一下：新做的通用零件 npm run engine -- push 还给框架——push 会在框架仓库开一个 PR，人工审阅合并后其他项目 pull --fetch 才能拿到（GUIDE.md 第 0、9 节）
 `)

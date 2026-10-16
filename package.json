@@ -8,6 +8,7 @@
   "type": "module",
   "scripts": {
     "new": "node scripts/new.mjs",
+    "engine": "node scripts/engine.mjs",
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
