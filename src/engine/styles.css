@@ -1,22 +1,8 @@
-/* 和 lib/colors.ts 的 C 一一对应 */
+/*
+ * 颜色变量（--ink、--clawd、--q、--bubble……）不写在这里：applyTheme()（engine/themes.ts）
+ * 按当前主题把 lib/colors.ts 的调色板和主题的样式值写到 :root 上，颜色只在 TS 里写一份。
+ */
 :root {
-  --ink: #1f1e1d;
-  --ink-2: #292826;
-  --ink-3: #34322f;
-  --line: #46433e;
-  --fg: #eeeae2;
-  --dim: #9a958b;
-  --faint: #625e57;
-  --clawd: #d77757;
-  --clawd-hi: #eb9f7f;
-  --q: #b1b9f9;
-  --k: #4eba65;
-  --v: #ffc107;
-  --red: #ff6b80;
-  --pink: #fd5db1;
-  --purple: #af87ff;
-  --blue: #56b6f7;
-  --teal: #48968c;
   --mono: 'Maple Mono', 'Cascadia Mono', 'Noto Sans SC', ui-monospace, monospace;
   --sans: 'Noto Sans SC', 'Microsoft YaHei', system-ui, sans-serif;
   --serif: 'KaTeX_Main', 'Times New Roman', serif;
@@ -31,7 +17,7 @@ body {
   margin: 0;
   height: 100%;
   overflow: hidden;
-  background: #121110;
+  background: var(--page);
 }
 
 #viewport {
@@ -68,27 +54,27 @@ body {
   position: absolute;
 }
 
-/* ── Clawd ─────────────────────────────────── */
-.clawd {
+/* ── 演员（Clawd、小鲸……）─────────────────── */
+.actor {
   position: absolute;
   left: 0;
   top: 0;
 }
-.clawd-hop {
+.actor-hop {
   position: absolute;
   inset: 0;
 }
-.clawd-svg {
+.actor-svg {
   display: block;
 }
-.clawd-shadow {
+/* 影子的浓淡写在颜色里，跳起来时 opacity 只在 1 和 0.3 之间变 */
+.actor-shadow {
   position: absolute;
   left: 50%;
   bottom: 0;
   translate: -50% 50%;
   border-radius: 50%;
-  background: #000;
-  opacity: 0.4;
+  background: var(--shadow);
 }
 
 /* ── 讲解气泡 ──────────────────────────────── */
@@ -97,15 +83,27 @@ body {
   display: grid;
   align-items: center;
   padding: 0 44px;
-  border: 2px solid rgba(215, 119, 87, 0.9);
+  border: 2px solid color-mix(in srgb, var(--clawd) 90%, transparent);
   border-radius: 18px;
-  background: #282725;
+  background: var(--bubble);
 }
 .bubble-tail {
   position: absolute;
   left: -30px;
   top: 50%;
   margin-top: -21px;
+}
+/* 名牌：多人对话时，说话人不是讲解员就嵌在左上角的边框上（底色是说话人的颜色，bubble.speaker 设置） */
+.bubble-tag {
+  position: absolute;
+  left: 34px;
+  top: -17px;
+  padding: 3px 16px 4px;
+  border-radius: 9px;
+  color: #fff;
+  font: 700 22px/1.2 var(--sans);
+  letter-spacing: 0.06em;
+  white-space: nowrap;
 }
 .bubble-text {
   display: grid;
@@ -208,7 +206,7 @@ body {
   display: flex;
   align-items: center;
   padding: 0 24px;
-  border: 2px solid rgba(136, 136, 136, 0.6);
+  border: 2px solid color-mix(in srgb, var(--prompt) 60%, transparent);
   border-radius: 14px;
 }
 .prompt-line {
@@ -266,7 +264,7 @@ body {
 }
 .think-word {
   font-family: var(--mono);
-  background: linear-gradient(90deg, var(--clawd) 0 38%, #ffd2bd 50%, var(--clawd) 62% 100%);
+  background: linear-gradient(90deg, var(--clawd) 0 38%, var(--shimmer) 50%, var(--clawd) 62% 100%);
   background-size: 320% 100%;
   -webkit-background-clip: text;
   background-clip: text;

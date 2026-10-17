@@ -13,13 +13,12 @@ export const STAGE = { top: 150, bottom: 760, left: MARGIN, right: W - MARGIN } 
 export const STAGE_CX = W / 2
 export const STAGE_CY = (STAGE.top + STAGE.bottom) / 2
 
-/** 输入框：Clawd 就站在它的上沿 */
+/** 输入框：讲解员就站在它的上沿 */
 export const PROMPT = { top: 934, height: 66, left: MARGIN, right: W - MARGIN } as const
 export const FOOTER_Y = 1016
 
-export const CLAWD_PX = 14
-/** Clawd 的“家”：脚底中心坐标 */
-export const CLAWD_HOME = { x: 196, y: PROMPT.top } as const
+/** 讲解员（Clawd / 小鲸）的“家”：脚底中心坐标 */
+export const HOST_HOME = { x: 196, y: PROMPT.top } as const
 
 /** 讲解气泡 */
 export const BUBBLE = { left: 344, top: 786, width: W - MARGIN - 344, height: 134 } as const

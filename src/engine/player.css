@@ -1,4 +1,7 @@
+/* 播放器不进视频，永远是深色的半透明控制条：亮色主题下也照样看得清，只有强调色跟主题走 */
 #player {
+  --fg: #eeeae2;
+  --dim: #9a958b;
   position: fixed;
   inset: 0;
   pointer-events: none;

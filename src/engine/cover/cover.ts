@@ -8,9 +8,10 @@ import './cover.css'
 import { gsap } from 'gsap'
 import { h } from '../lib/dom'
 import { C } from '../lib/colors'
-import { Clawd } from '../clawd/clawd'
+import { applyTheme, CLAUDE, type Theme } from '../themes'
 import { createBanner } from '../ui/banner'
 import { typeset } from '../ui/bubble'
+import { arrowUp, atom, globe } from '../ui/chat'
 
 export interface CoverOptions {
   /** 左上角的系列标签，比如 '小克学AI'、'小克读论文' */
@@ -30,7 +31,7 @@ export interface CoverOptions {
   titleSize?: number
   /** 输入框里的钩子问题 */
   question: string
-  /** Clawd 站在输入框上沿的横坐标（px），默认 1400；别挡住问题的文字 */
+  /** 讲解员（Clawd / 小鲸）站在输入框上沿的横坐标（px），默认 1400；别挡住问题的文字和上面的大字 */
   clawdX?: number
 }
 
@@ -45,12 +46,13 @@ const TITLE_BOTTOM = 790
 /** 副题的左边，以及它和 Clawd 之间至少要留的空（前两期的封面都是这个间距） */
 const TITLE_LEFT = 112
 const TITLE_GAP = 56
-/** Clawd 的坐标是相对输入框（left 120 + 边框 3）的；精灵宽 16 格 × 30px，左边缘在中心左边 240px */
-const clawdLeft = (x: number) => 123 + x - 240
+/** 讲解员的坐标是相对输入框（left 120 + 边框 3）的：中心 x 减半个身宽，就是它在封面上的左边缘 */
+const hostLeft = (x: number, width: number) => 123 + x - width / 2
 
 /**
- * 封面：定格在“提出问题”的那一刻的 Claude Code 终端。
- * 输入框里是钩子问题，Clawd 站在输入框上沿，上面是和片头同款的 ANSI Shadow 大字，再加一行白色粗体的中文副题。
+ * 封面：定格在“提出问题”的那一刻。Claude 系列是 Claude Code 终端（> 问题 + 方块光标），
+ * DS 系列是对话页（圆角输入卡片 + 深度思考胶囊 + 蓝色发送键），由主题的 ui 决定。
+ * 输入框里是钩子问题，讲解员站在输入框上沿，上面是和片头同款的 ANSI Shadow 大字，再加一行粗体的中文副题。
  *
  * 版面按 1920×1200（16:10）设计，宽度永远是 1920，换比例只改画布高度、把整块内容上下平移，不缩放：
  *   ?h=1200 → 16:10，B 站电脑端的比例。底部约 16% 不放关键内容：卡片会在那里叠播放数据和时长
@@ -59,11 +61,13 @@ const clawdLeft = (x: number) => 123 + x - 240
  *             其他页面再从中裁出 16:9 / 16:10）。就是 16:9 版上下各加 180px 的边：内容全在中间的 16:9 范围里，
  *             裁成哪种比例都不丢关键内容，裁出来的 16:9 和 16:9 版完全一样
  */
-export async function renderCover(o: CoverOptions) {
+export async function renderCover(o: CoverOptions, theme: Theme = CLAUDE) {
   document.title = `【${o.tag}】封面`
+  applyTheme(theme)
   const H = Number(new URLSearchParams(location.search).get('h') ?? DESIGN_H)
   const root = document.getElementById('cover')!
   root.style.height = `${H}px`
+  root.classList.add(`ui-${theme.ui}`)
 
   // 左上：系列标签；右上：时长 / 出处
   const top = h('div', { class: 'top' }, [h('div', { class: 'tag', text: o.tag }), h('div', { class: 'badge', text: o.badge })])
@@ -93,19 +97,28 @@ export async function renderCover(o: CoverOptions) {
   const title = h('h1', { class: 'title', text: o.title })
   Object.assign(title.style, { top: `${TITLE_BOTTOM - size}px`, fontSize: `${size}px` })
 
-  // 输入框：里面是钩子问题
+  // 输入框：里面是钩子问题。终端是“> 问题 █”，对话页是圆角卡片 + 胶囊 + 发送键
   const question = h('span', { class: 'q' })
   typeset(o.question, question)
-  const prompt = h('div', { class: 'prompt' }, [
-    h('div', { class: 'prompt-line' }, [h('span', { class: 'gt', text: '>' }), question, h('span', { class: 'cursor' })]),
-  ])
+  const prompt =
+    theme.ui === 'chat'
+      ? h('div', { class: 'prompt chat-card' }, [
+          h('div', { class: 'prompt-line' }, [question, h('span', { class: 'cp-caret' })]),
+          h('div', { class: 'cc-tools' }, [
+            h('div', { class: 'cc-pill on' }, [atom(), h('span', { text: '深度思考' })]),
+            h('div', { class: 'cc-pill' }, [globe(), h('span', { text: '联网搜索' })]),
+            h('div', { class: 'cc-send' }, [arrowUp()]),
+          ]),
+        ])
+      : h('div', { class: 'prompt' }, [
+          h('div', { class: 'prompt-line' }, [h('span', { class: 'gt', text: '>' }), question, h('span', { class: 'cursor' })]),
+        ])
 
-  // 主角二：Clawd 站在输入框的上沿，直视观众，举起右手打招呼。
-  // 它的辨识度来自“身体两侧中段各一个小突起 + 竖长的眼睛”，所以只抬一只手，保住这个轮廓
+  // 主角二：讲解员站在输入框的上沿，直视观众，举手打招呼（各角色的 pose()）
   const actors = h('div', { class: 'cover-actors' })
   prompt.append(actors)
-  const clawd = new Clawd(actors, { px: 30, x: o.clawdX ?? 1400, y: 0 })
-  gsap.set(clawd.armR, { y: -3 })
+  const host = theme.host(actors, { x: o.clawdX ?? 1400, y: 0 }, 'cover')
+  host.pose()
 
   const design = h('div', { class: 'design' }, [...parts, title, prompt])
   // 换比例不缩放（字符画的方块是整数像素，一缩放相邻方块之间就会出现细缝），只是把整块内容上下平移，让上下留白相等
@@ -116,7 +129,7 @@ export async function renderCover(o: CoverOptions) {
   const band = H > DESIGN_H ? (H - 1080) / 2 : 0
   const grid = h('div', { class: 'grid' })
   grid.style.backgroundPosition = `24px ${24 + band}px`
-  const foot = h('div', { class: 'foot', text: '? for shortcuts' })
+  const foot = h('div', { class: 'foot', text: theme.ui === 'chat' ? '内容由 AI 生成，请仔细甄别' : '? for shortcuts' })
   foot.style.bottom = `${FOOT_BOTTOM + band}px`
   root.append(grid, design, foot)
 
@@ -130,8 +143,8 @@ export async function renderCover(o: CoverOptions) {
   ])
   await document.fonts.ready
 
-  // 副题太长会撞上 Clawd：按实际宽度把字号缩到放得下为止（字体加载完才量得准）
-  const avail = clawdLeft(o.clawdX ?? 1400) - TITLE_GAP - TITLE_LEFT
+  // 副题太长会撞上讲解员：按实际宽度把字号缩到放得下为止（字体加载完才量得准）
+  const avail = hostLeft(o.clawdX ?? 1400, host.w * host.px) - TITLE_GAP - TITLE_LEFT
   const width = title.getBoundingClientRect().width
   if (width > avail) {
     const fit = Math.floor((size * avail) / width)

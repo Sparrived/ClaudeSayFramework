@@ -2,4 +2,4 @@
 import { renderCover } from './engine/cover/cover'
 import { VIDEO } from './video/config'
 
-void renderCover(VIDEO.cover)
+void renderCover(VIDEO.cover, VIDEO.theme)

@@ -1,0 +1,123 @@
+/* ── 对话页（DS 系列的外壳，ui/chat.ts）──────────────── */
+
+/* 标尺的标记是圆点 */
+.ruler-round .ruler-marker {
+  border-radius: 50%;
+}
+
+/* 输入框：大圆角白卡片，右边两颗胶囊和发送键 */
+.chat-prompt {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 0 12px 0 30px;
+  border: 1.5px solid var(--line);
+  border-radius: 24px;
+  background: var(--ink);
+  box-shadow: 0 6px 24px color-mix(in srgb, var(--fg) 8%, transparent);
+}
+.cp-field {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font-size: 30px;
+  line-height: 1;
+  white-space: pre;
+}
+.cp-caret {
+  display: inline-block;
+  width: 3px;
+  height: 1.15em;
+  margin: 0 3px 0 1px;
+  vertical-align: -0.2em;
+  background: var(--clawd);
+}
+.chat-prompt .placeholder {
+  color: var(--faint);
+}
+.cp-tools {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.cp-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 42px;
+  padding: 0 18px 0 14px;
+  border: 1.5px solid var(--line);
+  border-radius: 21px;
+  color: var(--dim);
+  font: 500 21px var(--sans);
+  white-space: nowrap;
+}
+.cp-pill.on {
+  border-color: color-mix(in srgb, var(--clawd) 45%, transparent);
+  background: color-mix(in srgb, var(--clawd) 12%, var(--ink));
+  color: var(--clawd);
+}
+.cp-pill svg {
+  width: 22px;
+  height: 22px;
+}
+.cp-send {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: var(--line);
+  color: #fff;
+}
+.cp-send svg {
+  width: 24px;
+  height: 24px;
+}
+
+/* 观众的问题：右上角的用户气泡 */
+.chat-q {
+  padding: 8px 26px 10px;
+  border-radius: 22px;
+  background: var(--ink-2);
+  font-size: 28px;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+/* 深度思考：标题一行（转圈 + 思考中 / 已深度思考），下面左边带竖线的灰色心里话 */
+.chat-think {
+  font-family: var(--sans);
+}
+.ct-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: fit-content;
+  height: 46px;
+  padding: 0 20px 0 16px;
+  border-radius: 14px;
+  background: var(--ink-2);
+  color: var(--dim);
+  font: 500 24px var(--sans);
+  white-space: nowrap;
+}
+.ct-ring {
+  width: 24px;
+  height: 24px;
+  color: var(--clawd);
+}
+.ct-body {
+  margin: 14px 0 0 6px;
+  padding-left: 20px;
+  border-left: 3px solid var(--line);
+  color: var(--faint);
+  font: 400 26px/1.5 var(--sans);
+  white-space: nowrap;
+}
+
+/* 底栏：左边的提示用无衬线字 */
+.chat-footer {
+  font-family: var(--sans);
+}

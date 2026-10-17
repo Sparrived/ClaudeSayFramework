@@ -1,18 +1,19 @@
 import { MOOD } from '../engine/audio/score'
 import { C } from '../engine/lib/colors'
-import type { VideoConfig } from '../engine/types'
+import { defineVideo } from '../engine/types'
 
 /**
  * 这一期的设置。开新片时先改这里：片名、导出文件名、进度标尺、配乐、封面。
  * 场景（台词和画面）在 scenes/ 里，按播放顺序登记在 scenes/index.ts。
+ * defineVideo 顺便应用主题（这里没写 theme，就是默认的 CLAUDE：Clawd + 深色终端），所以下面 SEM 读到的 C 已经是主题色。
  */
-export const VIDEO: VideoConfig = {
+export const VIDEO = defineVideo({
   title: 'Clawd 的片场：用代码拍一支动画',
   slug: 'clawd-demo',
 
   terminal: {
     // 每一章用 d.chapter({ step }) 把标尺上的方块移到对应的一站
-    stops: ['开场', '时间轴', '公式', '片尾'],
+    stops: ['开场', '同事', '时间轴', '公式', '片尾'],
     placeholder: 'Try "用代码拍一支动画"',
   },
 
@@ -21,6 +22,7 @@ export const VIDEO: VideoConfig = {
     moods: {
       'intro-a': MOOD.calm,
       'intro-b': MOOD.welcome,
+      cast: MOOD.sparkle,
       timeline: { ...MOOD.arrival, boom: true },
       math: MOOD.think,
       'outro-a': MOOD.windDown,
@@ -40,7 +42,7 @@ export const VIDEO: VideoConfig = {
     title: '用代码拍动画',
     question: '这支动画是怎么做出来的？',
   },
-}
+})
 
 /** 这一期里有固定含义的颜色（台词里用 {o:…}，公式里用 \cO{…}，画面里用 C.clawd，三处保持一致） */
 export const SEM = {

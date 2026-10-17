@@ -1,7 +1,8 @@
 import { gsap } from 'gsap'
 import type { Director } from '../director'
 import { at, h, hide, set } from '../lib/dom'
-import { CLAWD_HOME, CLAWD_PX, HEADING_Y, MARGIN, STAGE_CX, STAGE_CY } from '../layout'
+import { HEADING_Y, HOST_HOME, MARGIN, STAGE_CX, STAGE_CY } from '../layout'
+import { Terminal } from '../ui/terminal'
 
 export interface OpeningOptions {
   /** 终端的当前目录：shell 提示符和欢迎框里都会显示，比如 '~/papers/iccv2025' */
@@ -32,7 +33,8 @@ export function shellPrompt(cwd: string, ...rest: Node[]) {
  * 讲完 d.end(layer)。
  */
 export function opening(d: Director, o: OpeningOptions) {
-  const { tl, clawd, term, sfx } = d
+  const { tl, host, term, sfx } = d
+  if (!(term instanceof Terminal)) throw new Error('opening() 要配终端外壳（主题 CLAUDE）；DS 系列用 chatOpening()')
   const id = o.id ?? 'intro'
   const L = d.layer(id)
   gsap.set(L, { autoAlpha: 1 })
@@ -56,7 +58,7 @@ export function opening(d: Director, o: OpeningOptions) {
   L.append(shell, welcome)
 
   // 一开始只有 shell；Claude Code 的界面和 Clawd 都还没出现
-  hide(term.rulerEl, term.prompt, term.footerEl, clawd.root)
+  hide(term.rulerEl, term.prompt, term.footerEl, host.root)
   d.chapter({ id, title: o.title ?? '开场', step: o.step })
 
   // ── 敲下 claude ──
@@ -72,34 +74,34 @@ export function opening(d: Director, o: OpeningOptions) {
   // ── 欢迎框 + 迷你 Clawd ──
   t += 0.25
   tl.fromTo(welcome, { autoAlpha: 0, scale: 0.96 }, { autoAlpha: 1, scale: 1, duration: 0.35, ease: 'power2.out', immediateRender: false }, t)
-  // 迷你版：一个精灵像素只有 6 个舞台像素，像终端里那么小
-  clawd.place(tl, STAGE_CX, STAGE_CY + 46, t, 6 / CLAWD_PX)
-  tl.fromTo(clawd.root, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.2, immediateRender: false }, t + 0.2)
+  // 迷你版：Clawd 一个精灵像素只有 6 个舞台像素，像终端里那么小
+  host.place(tl, STAGE_CX, STAGE_CY + 46, t, host.sizes.mini / host.px)
+  tl.fromTo(host.root, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.2, immediateRender: false }, t + 0.2)
   sfx.at(t + 0.2, 'pop')
   tl.to([term.rulerEl, term.prompt, term.footerEl], { autoAlpha: 1, duration: 0.4, stagger: 0.08 }, t + 0.3)
 
   // 东张西望
-  clawd.look(tl, 'l', t + 1.1)
-  clawd.look(tl, 'r', t + 1.6)
-  clawd.look(tl, 'c', t + 2.1)
-  clawd.blink(tl, t + 2.3)
+  host.look(tl, 'l', t + 1.1)
+  host.look(tl, 'r', t + 1.6)
+  host.look(tl, 'c', t + 2.1)
+  host.blink(tl, t + 2.3)
 
   // ── 观众提问 ──
   t += 2.6
   tl.to(shell, { autoAlpha: 0, duration: 0.25 }, t)
-  clawd.look(tl, 'd', t)
+  host.look(tl, 'd', t)
   t = term.ask(tl, o.question, t)
-  clawd.look(tl, 'u', t)
-  t = term.think(tl, t, 0.9, o.verb ?? 'Waking up')
-  clawd.look(tl, 'c', t)
+  host.look(tl, 'u', t)
+  t = term.think(tl, t, 0.9, { verb: o.verb ?? 'Waking up' })
+  host.look(tl, 'c', t)
 
   // ── 吃惊，跳出欢迎框，落到输入框上 ──
-  clawd.face(tl, 'wide', t)
-  t = clawd.hopTo(tl, CLAWD_HOME.x, CLAWD_HOME.y, t + 0.1, { dur: 0.75, height: 220, scale: 1 })
+  host.face(tl, 'wide', t)
+  t = host.hopTo(tl, HOST_HOME.x, HOST_HOME.y, t + 0.1, { dur: 0.75, height: 220, scale: 1 })
   sfx.at(t - 0.39, 'thud')
   d.cue('hop', t - 0.39)
   tl.to(welcome, { autoAlpha: 0, scale: 0.94, duration: 0.3, ease: 'power2.in' }, t - 0.8)
-  clawd.face(tl, 'normal', t)
+  host.face(tl, 'normal', t)
   d.t = t + 0.15
   return L
 }
