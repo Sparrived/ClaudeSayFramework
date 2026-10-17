@@ -1,0 +1,6 @@
+/* 小鲸身上各部件的标注 */
+.scene-cast .ca-part {
+  color: var(--blue);
+  font: 700 30px var(--sans);
+  letter-spacing: 0.08em;
+}

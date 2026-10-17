@@ -16,10 +16,9 @@ import { MotionPathPlugin } from 'gsap/MotionPathPlugin'
 import { TextPlugin } from 'gsap/TextPlugin'
 import { h } from './lib/dom'
 import { encodeWav, toBase64 } from './audio/wav'
-import { CLAWD_HOME, CLAWD_PX, H, W } from './layout'
-import { Clawd } from './clawd/clawd'
+import { HOST_HOME, H, W } from './layout'
+import { applyTheme, CLAUDE } from './themes'
 import { Bubble, setTempo } from './ui/bubble'
-import { Terminal } from './ui/terminal'
 import { Sfx } from './audio/sfx'
 import { ECHO_TAIL, SCORE_PREROLL, Score } from './audio/score'
 import { Director } from './director'
@@ -62,6 +61,9 @@ async function fontBarrier() {
  */
 export async function boot(video: VideoConfig, scenes: Scene[]) {
   document.title = video.title
+  // 主题一般已经由 config.ts 的 defineVideo() 应用过了，这里再保险一次（重复应用没有副作用）
+  const theme = video.theme ?? CLAUDE
+  applyTheme(theme)
   const stage = document.getElementById('stage')!
   const params = new URLSearchParams(location.search)
   const renderMode = params.has('render')
@@ -83,13 +85,13 @@ export async function boot(video: VideoConfig, scenes: Scene[]) {
   const layers = h('div', { class: 'layers' })
   const sfx = new Sfx()
   stage.append(layers)
-  const term = new Terminal(stage, sfx, video.terminal)
+  const term = theme.shell(stage, sfx, video.terminal)
   const actors = h('div', { class: 'actors' })
   stage.append(actors)
-  const clawd = new Clawd(actors, { px: CLAWD_PX, x: CLAWD_HOME.x, y: CLAWD_HOME.y })
+  const host = theme.host(actors, { x: HOST_HOME.x, y: HOST_HOME.y })
   const bubble = new Bubble(actors)
 
-  const d = new Director({ layers, clawd, bubble, term, sfx })
+  const d = new Director({ layers, host, bubble, term, sfx })
   const errors: string[] = []
   for (const scene of scenes) {
     // 开发时某一章写坏了，不要连累其他章：记一笔错误，接着排后面的章节（导出脚本看到错误会中止）

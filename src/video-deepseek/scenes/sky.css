@@ -1,0 +1,22 @@
+/* 天空：舞台上方铺一层淡蓝，往下渐渐变透明 */
+.scene-sky .sk-tint {
+  left: 0;
+  top: 0;
+  width: 1920px;
+  height: 790px;
+  background: linear-gradient(color-mix(in srgb, var(--blue) 30%, transparent), transparent);
+}
+.scene-sky .sk-cap {
+  color: var(--dim);
+  font: 500 28px var(--sans);
+}
+.scene-sky .sk-bar {
+  color: var(--fg);
+  font: 600 28px/1.25 var(--sans);
+  text-align: center;
+  white-space: pre;
+}
+.scene-sky .sk-note {
+  color: var(--purple);
+  font: 700 26px var(--sans);
+}

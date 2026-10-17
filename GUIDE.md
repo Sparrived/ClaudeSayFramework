@@ -1,7 +1,14 @@
 # ClaudeSay 视频制作指南
 
-一支 ClaudeSay 视频就是一个网页：Claude Code 的橙色像素小人 **Clawd** 站在终端的输入框上，用讲解气泡说台词（没有配音），
+一支 ClaudeSay 视频就是一个网页：像素小人讲解员站在输入框上，用讲解气泡说台词（没有配音），
 台词、画面、音效、配乐全部排在**同一条 GSAP 时间轴**上。网页里可以拖进度条预览；导出时无头浏览器逐帧 seek + 截图，FFmpeg 编成 MP4。
+
+框架里有两个系列（主题，第 5 节「主题」）：
+
+| 系列 | 讲解员 | 外壳 | 片头 / 片尾 | 用来讲 |
+| :--- | :--- | :--- | :--- | :--- |
+| Claude 系列（`CLAUDE`，默认） | Claude Code 的橙色像素小人 **Clawd** | 深色 Claude Code 终端 | 敲 `claude` 开场、`/exit` 收尾 | 进阶知识（小克学AI / 小克读论文） |
+| DS 系列（`DEEPSEEK`） | DeepSeek 的拟人形象 **小鲸**（多色像素画） | 亮色对话页（致敬 DeepSeek 网页版） | 首页鲸鱼图标里蹦出小鲸、发一句谢谢回到首页 | 科普百科 |
 
 这份指南是框架的一部分（`npm run engine` 会同步它），写新片、改引擎之前先读一遍。
 
@@ -9,7 +16,7 @@
 
 ## 0. 先读这一段：引擎是起点，不是终点
 
-框架省掉的只是“每期都要重搭一遍”的部分：时间轴和导出、Clawd 和终端界面、气泡和配乐、片头片尾，再加上前两期攒下来的一些图元。
+框架省掉的只是“每期都要重搭一遍”的部分：时间轴和导出、讲解员和外壳（终端 / 对话页）、气泡和配乐、片头片尾，再加上前两期攒下来的一些图元。
 它**不规定**一期视频该长什么样，更不应该让新片变得千篇一律、越做越省事也越做越像。
 
 - **画面从题目里长出来。** 写场景之前，先想清楚“这个概念用什么画面讲最直观、最有意思”，再去引擎里找零件；没有合适的，就为这一期专门做。
@@ -17,12 +24,12 @@
 - **每一期都该有只属于它的画面。** 前两期最出彩的画面，引擎里原本都没有，全是为题目专门做的：
   RNN 逐词展开、正弦位置编码的波形、BERT 与 GPT 分家（Transformer）；四张真算出来的注意力热力图对上公式、
   Frobenius 内积的几何读数、蒙特卡洛直方图里方差的收拢（MixA）。新片也应该有这样的画面。
-- **引擎要越用越丰富。** 鼓励每一期都给引擎添东西：新的图元和可视化、新的动画手法、Clawd 的新表情 / 动作 / 道具、
+- **引擎要越用越丰富。** 鼓励每一期都给引擎添东西：新的图元和可视化、新的动画手法、演员（Clawd、小鲸）的新表情 / 动作 / 道具、新的角色、
   新的音效和配器、新的成套画面、新的版式。只要能按时间轴的当前时刻画出来（`d.hook`），新技术也可以引进来：Canvas、WebGL / 3D、物理模拟（可以像 MixA 那期的蒙特卡洛一样，先用脚本算好结果再画）……
   做法：先在 `src/video/` 里做出来；觉得别的题目也用得上，就整理成通用的接口搬进 `src/engine/`，用 `npm run engine -- push` 还给框架（开 PR 等人工审阅合并，第 9 节），
   合并之后下一期就能直接用。引擎现有的功能不好用、不好看，也可以改，改完让示例片和其他项目 pull 之后照样能跑就行。
 - **需要守住的只有两样。** 一是第 3 节的技术规矩（一切排在可以 seek 的时间轴上、结果确定可复现——拖进度条和逐帧导出都靠它）；
-  二是系列感（Clawd 和终端界面的样子，敲 `claude` 开场、`/exit` 收尾的套路；套路里面的内容每期都可以不一样）。
+  二是系列感（讲解员和外壳的样子、片头片尾的套路：Claude 系列敲 `claude` 开场、`/exit` 收尾，DS 系列从对话页首页开场、发一句谢谢回到首页；套路里面的内容每期都可以不一样）。
   除此之外，版式、颜色的含义、节奏、画面风格，都可以按题目重新设计。
 
 ## 1. 目录
@@ -34,27 +41,31 @@ src/
 │   ├── boot.ts             启动：搭舞台和演员 → 按顺序执行场景 → 配乐 → 播放器 / 导出模式
 │   ├── director.ts         导演：时间游标 d.t、chapter / say / beat / end / cue / hook
 │   ├── layout.ts           舞台坐标常数（1920×1080）
-│   ├── types.ts            VideoConfig、Scene
-│   ├── clawd/              Clawd 的精灵图和动作
-│   ├── ui/                 讲解气泡（bubble）、终端界面（terminal）、ANSI Shadow 大字（banner）
+│   ├── types.ts            VideoConfig、Scene、defineVideo
+│   ├── themes.ts           主题：CLAUDE / DEEPSEEK（讲解员 + 外壳 + 配色），applyTheme
+│   ├── actors/             演员：Actor 基类、像素画工具 pixel、Clawd、小鲸 Whale（点阵在 whale-art.ts）
+│   ├── ui/                 讲解气泡（bubble）、外壳接口（shell）：终端（terminal）/ 对话页（chat）、进度标尺（ruler）、ANSI Shadow 大字（banner）
 │   ├── audio/              音效（sfx）、配乐（score，含配器预设 MOOD）、WAV 编码
 │   ├── lib/                dom · colors · viz · tex · heat · chart · panel · blocks · linalg（见第 5 节）
-│   ├── kit/                成套画面：片头 opening、片名卡 titleCard、片尾 ending、论文首页 paperPage
+│   ├── kit/                成套画面：片头片尾 opening / ending（终端）、chatOpening / chatEnding（对话页），片名卡 titleCard、论文首页 paperPage
 │   ├── cover/              封面
 │   └── player.ts           网页播放器（进度条、章节、快捷键）
-└── video/                  这一期的内容
-    ├── config.ts           片名、导出文件名、进度标尺、配乐编排、封面
-    └── scenes/             一章一个 .ts（+ 同名 .css），index.ts 按播放顺序登记
+├── video/                  这一期的内容
+│   ├── config.ts           片名、导出文件名、主题、进度标尺、配乐编排、封面
+│   └── scenes/             一章一个 .ts（+ 同名 .css），index.ts 按播放顺序登记
+└── video-deepseek/         （只在框架里有）DS 系列的示例片：DEMO=deepseek 预览，npm run new --theme deepseek 时拷成新项目的 video/
 scripts/                    render · audio · snap · sheet · score-report · cover · engine（new 只在框架里有）
 ```
 
 ## 2. 开一期新片
 
-1. 在框架目录里：`npm run new -- ClaudeSayXxx --title "片名" --slug clawd-xxx`。
-   新项目建在框架旁边（`../ClaudeSayXxx`），装好依赖，自带一支约 90 秒的示例片，`npm run dev` 就能看。
-2. 改 `src/video/config.ts`：片名、slug、进度标尺的各站、配乐编排、封面文字。
-3. 先为题目设计画面（第 0 节），再把 `src/video/scenes/` 里的示例章节换成自己的：**第一章用 `opening()` 开头，最后一章用 `ending()` 收尾**，
-   中间每章用 `d.chapter()` 开头。示例片的四章（intro / timeline / math / outro）只是 API 写法的范本，不是新片的结构或版式；
+1. 在框架目录里：`npm run new -- ClaudeSayXxx --title "片名" --slug clawd-xxx`（Claude 系列），
+   或者 `npm run new -- WhaleSayXxx --theme deepseek --title "片名"`（DS 系列，导出名默认 `whale-xxx`）。
+   新项目建在框架旁边（`../ClaudeSayXxx`），装好依赖，自带这个系列的示例片（Claude 约 110 秒，DS 约 65 秒），`npm run dev` 就能看。
+2. 改 `src/video/config.ts`：片名、slug、进度标尺的各站、配乐编排、封面文字（主题 `theme` 已经按系列写好）。
+3. 先为题目设计画面（第 0 节），再把 `src/video/scenes/` 里的示例章节换成自己的：**第一章用 `opening()`（DS 系列 `chatOpening()`）开头，
+   最后一章用 `ending()`（DS 系列 `chatEnding()`）收尾**，中间每章用 `d.chapter()` 开头。
+   示例片的章节（Claude：intro / cast / timeline / math / outro；DS：intro / sky / outro）只是 API 写法的范本，不是新片的结构或版式；
    前两期的完整场景在 `../ClaudeSayTransformer`（科普，13 章）和 `../ClaudeSayPaper`（论文精读，数学可视化），可以看看它们怎样为题目专门造画面。
 4. 边写边看：`npm run dev`（URL 加 `?ch=章节id` 直接跳到那一章）；`npm run snap` 截图核对版面；`npm run typecheck`。
 5. 收尾：`npm run score`（配乐自检）→ `npm run render`（成片）→ `npm run cover`（封面）→ 补 README 的章节表。
@@ -77,7 +88,7 @@ export function bottleneck(d: Director) {
   const k = chip(L, 'Key', 1280, 400, { cls: 'mono' })
   hide(q, k)
 
-  // ② 开章：观众提问 → Claude Code 式的思考动画 →（可选）ANSI Shadow 大字
+  // ② 开章：观众提问 → 思考动画（终端：Claude Code 式的动词；对话页：深度思考里的心里话 thought）→（可选）ANSI Shadow 大字
   d.chapter({ id: 'bottleneck', title: '瓶颈', step: '瓶颈', question: '为什么这么慢？', verb: 'Profiling', layer: L })
 
   // ③ 一句一句排：画面写在 say 的回调里，用 w('词') 踩在台词的字上
@@ -101,7 +112,8 @@ export function bottleneck(d: Director) {
 - `d.say(text, fn?, opts?)`：一句台词 = 逐字打出来的时间 + 停留时间（按字数算）。`fn(t, w)` 在这句开始时被调用：
   `t` 是开始时刻，`w('某个词')` 是这个词开始被打出来的时刻（找不到这个词会报错，改台词时能发现画面没跟上）。
   - `{ min: 秒 }`：这句至少持续多久。画面动画比台词长时一定要给，不然下一句的画面会和它抢时间。
-  - `{ hold }` 停留时间、`{ after }` 句后空白、`{ talk: false }` Clawd 不摆手（要挥手 / 举手时用）。
+  - `{ hold }` 停留时间、`{ after }` 句后空白、`{ talk: false }` 不配说话的小动作（Clawd 摆手、小鲸张嘴；要挥手 / 举手时用）。
+  - `{ by: 演员 }`：这句由谁来说（默认讲解员）。说话人不是讲解员时，气泡边框换成他的颜色、左上角嵌一个名牌、尾巴藏起来。见第 5 节「多个演员同台」。
 - `d.beat(dur, fn?)`：不说话，只放画面。
 - `d.chapter({...})` 带 `banner` 时，大字在舞台正中停留约 1 秒；之后第一句的前 0.9 秒画面中央还被大字占着，
   中央的画面从 `Math.max(t + 0.9, w('…'))` 开始。
@@ -133,10 +145,10 @@ export function bottleneck(d: Director) {
 | :--- | :--- |
 | 舞台 | 1920 × 1080，所有坐标都是舞台像素 |
 | 顶部进度标尺 | y = 46（`RULER_Y`） |
-| 对话记录里的问题 “> …” | y = 92（`HEADING_Y`） |
+| 对话记录里的问题 | y = 92（`HEADING_Y`）。终端是左上角的 “> …”；对话页是右上角的用户气泡 |
 | **画面可用区域** | x 64–1856，y 150–760（`STAGE`，中心 `STAGE_CX` = 960、`STAGE_CY` = 455） |
 | 讲解气泡 | x 344–1856，y 786–920（`BUBBLE`） |
-| 输入框 / Clawd 的家 | 输入框 y 934–1000；Clawd 脚底中心在 (196, 934)（`CLAWD_HOME`） |
+| 输入框 / 讲解员的家 | 输入框 y 934–1000；讲解员脚底中心在 (196, 934)（`HOST_HOME`）。Clawd 在家是 224×140；小鲸是 144×216，头顶到 y ≈ 718，舞台左下角那一小块会被她挡住 |
 
 ### 台词
 
@@ -146,7 +158,7 @@ export function bottleneck(d: Director) {
 
 | 标记 | 颜色 | 标记 | 颜色 |
 | :--- | :--- | :--- | :--- |
-| `{o:…}` | Clawd 橙 | `{pink:…}` | 粉 |
+| `{o:…}` | 主色（Claude 系列是 Clawd 橙，DS 系列是鲸鱼蓝） | `{pink:…}` | 粉 |
 | `{q:…}` | 淡紫蓝 | `{purple:…}` | 紫 |
 | `{k:…}` | 绿 | `{blue:…}` | 蓝 |
 | `{v:…}` | 琥珀 | `{teal:…}` | 青 |
@@ -162,9 +174,11 @@ export function bottleneck(d: Director) {
 
 | 函数 | 用途 |
 | :--- | :--- |
-| `opening(d, { cwd, question, verb?, model?, step? })` | 系列片头（约 7 秒，cue `hop`）。必须是第一个场景的第一步，返回开场图层 |
-| `titleCard(d, layer, { word, sub?, cell? })` | 片名卡：`.reveal(t)` 扫出大字（cue `title`）、`.hide(t)` 收起。`word` 只能是英文 / 数字 |
-| `ending(d, layer, { cwd, thanks?, cite?, clear? })` | 系列片尾：`/exit` → Clawd 跳到中央（cue `land`）→ 片尾卡。必须是最后一步 |
+| `opening(d, { cwd, question, verb?, model?, step? })` | Claude 系列片头（约 7 秒，cue `hop`）。必须是第一个场景的第一步，返回开场图层 |
+| `ending(d, layer, { cwd, thanks?, cite?, clear? })` | Claude 系列片尾：`/exit` → Clawd 跳到中央（cue `land`）→ 片尾卡。必须是最后一步 |
+| `chatOpening(d, { question, greeting?, sub?, thought?, step? })` | DS 系列片头（约 8 秒，cue `hop`）：对话页首页、鲸鱼图标喷水花、问候语 → 提问 → 首页收成对话布局 → 深度思考 → 小鲸从图标里蹦出来落到输入框上 |
+| `chatEnding(d, layer, { farewell?, thanks?, cite?, clear? })` | DS 系列片尾：发一句“谢谢小鲸，下次见！”→ 回到首页，问候语的位置换成谢谢观看，小鲸跳到中间挥手（cue `land`） |
+| `titleCard(d, layer, { word, sub?, cell? })` | 片名卡（两个系列都能用）：`.reveal(t)` 扫出大字（cue `title`）、`.hide(t)` 收起。`word` 只能是英文 / 数字 |
 | `paperPage(parent, { x, y, w?, h?, stamp?, title, authors, affil?, abstract?, colors? })` | 论文首页。标题 / 摘要里用 `[[…]]` 圈出的短语可以用 `sweep(tl, page.marks[i], t)` 荧光笔扫亮 |
 
 **画面（`engine/lib`）**
@@ -179,16 +193,50 @@ export function bottleneck(d: Director) {
 | `panel` | `panel` 终端风格面板（标题嵌在边框上）· `table` 数据表 |
 | `blocks` | `mblock` 矩阵“形状块”（N×d 之类） |
 | `linalg` | `rng` · `gauss` · `randn` · `matmul` · `transpose` · `softmaxRows` · `relu` · `frob` · `norm` · `trace` · `mean` · `std` · `histogram`… |
-| `colors` | `C`（颜色名，和 CSS 变量 `--clawd`、`--q`… 对应）· `mix` · `rgba` · `diverge` / `diverge2` 发散色带 · `heat` 顺序色带 |
+| `colors` | `C`（当前主题的颜色，和 CSS 变量 `--clawd`、`--q`… 对应）· `mix` · `rgba` · `luma` · `diverge` / `diverge2` 发散色带 · `heat` 顺序色带 |
 
-**演员**
+**演员（`engine/actors`）**
 
-- Clawd（`d.clawd`）：`look(tl, 'l'|'r'|'u'|'d'|'c', t)` · `face(tl, 'normal'|'happy'|'wide'|'closed', t)` ·
+所有演员都是 `Actor` 的子类，动作接口一样。每个动作都在时刻 t 往时间轴里加补间，并返回动作结束的时刻；同一个演员的动作按时间先后调用。
+
+- 讲解员 `d.host`（Claude 系列是 Clawd，DS 系列是小鲸；`d.clawd` 是它的老名字，**在 DS 主题里 `d.clawd` 也是小鲸**）。呼吸和眨眼是自动的。
+- 共同的动作：`look(tl, 'l'|'r'|'u'|'d'|'c', t)` · `lookAt(tl, 另一个演员或 x, t)` · `face(tl, 'normal'|'happy'|'wide'|'closed', t)` ·
   `prop(tl, 'sweat'|'bang'|'ask'|'heart'|'note', t, dur)` · `wave` · `cheer` · `talk` · `bounce` · `shake` · `blink` ·
-  `hopTo(tl, x, y, t, { dur, height, scale })` · `walkTo` · `place` · `show`。呼吸和眨眼是自动的。
-  每个动作都在时刻 t 往时间轴里加补间，并返回动作结束的时刻；同一只 Clawd 的动作按时间先后调用。
-- 终端（`d.term`）：`ask` 提问 · `think` 思考动画 · `heading` / `clearHeading` 顶部的问题 · `step` 进度标尺 · `footer` 右下角章节名。
+  `hopTo(tl, x, y, t, { dur, height, scale })` · `walkTo` · `place` · `show` · `headTop()`（头顶在舞台上的位置）。
+- `Clawd`（`actors/clawd.ts`）：16×10 单色点阵，由 Claude Code 欢迎界面的四分块字符画解码而来。说话时摆手。`Clawd.SIZES`：在家 14、迷你 6、片尾 10、封面 30（一个精灵像素 = 几个舞台像素）。
+- `Whale` 小鲸（`actors/whale.ts`，点阵在 `whale-art.ts`）：36×54、二十来种颜色的像素画，后发、呆毛、耳鳍、眼睛（四种表情 + 眨眼）、嘴（闭 / 张 / 笑）、
+  两只手（垂下 / 举到脸颊旁 / 挥手）、两条腿都是分开的部件。说话时嘴一张一合；`happy` 时耳鳍扑两下，`wide` 时呆毛弹一下；待机时呆毛偶尔晃、耳鳍偶尔扑。
+  专属动作：`flap(tl, t, n)` 扑耳鳍 · `spring(tl, t)` 呆毛弹起来（在 DS 主题里要用的话：`const xj = d.host as Whale`）。`Whale.SIZES`：在家 4、迷你 2、片尾 4、封面 8。
+- **多个演员同台**：讲解员之外的演员自己建、用 `d.actor()` 登记（登记过的才会自动呼吸眨眼、才能当 `say` 的 `by`）：
+
+  ```ts
+  const xj = d.actor(new Whale(L, { px: 5, x: 1180, y: 720 }))   // 放在本章图层里，脚底中心 (1180, 720)
+  d.say('大家好呀，我是{blue:小鲸}！', (t) => xj.wave(tl, t, 4), { by: xj })
+  d.say('同一条时间轴上，我们还能一起演！', (_, w) => { d.host.lookAt(tl, xj, w('一起')); xj.cheer(tl, w('一起'), 1.4) })
+  ```
+
+  同框时要不要统一像素大小由场景决定：px 一样，像素网格就一样（Clawd 会显得像只小宠物）；也可以各用各的。
+- **加一个新角色**：照着 `whale.ts` 写一个 `Actor` 的子类——点阵用 `actors/pixel.ts` 的 `paint(rows, palette, x, y)` 画（调色板字符点阵，同色横向合并成一个 `<rect>`），
+  会换帧的部件用 `Frames`（`show(tl, 帧名, t)`），对称的部件用 `mirror` / `symmetric` 只画一半；在构造函数里把部件按由后往前的顺序加进 `this.art`，
+  实现 `look / face / blink / talk / wave / cheer / steps / pose`，给出 `SIZES` 和道具位置。眨眼、说话最好做成“叠加层”（临时盖上去），不要去改表情帧，免得和 `face()` 打架。
+- 外壳（`d.term`，终端或对话页，接口在 `ui/shell.ts`）：`ask` 提问 · `think` 思考动画 · `heading` / `clearHeading` 顶部的问题 · `step` 进度标尺 · `footer` 右下角章节名。
 - 音效（`d.sfx.at(t, kind)`）：`blip` `key` `enter` `pop` `thud` `whoosh` `ding` `tick`。台词的“哔哔”声和打字声是自动的。
+
+**主题（`engine/themes.ts`）**
+
+一期视频的样子（讲解员 + 外壳 + 配色）由主题决定，在 `config.ts` 里选：
+
+```ts
+export const VIDEO = defineVideo({ title: '…', slug: '…', theme: DEEPSEEK, … })   // 不写 theme 就是 CLAUDE
+```
+
+- `defineVideo` 当场应用主题（改写 `C`、把颜色写成 `:root` 上的 CSS 变量、挂 `<html data-theme>`），所以 `config.ts` 里的 `SEM`、各章模块顶层读到的 `C` 都已经是主题色。
+- 颜色只在 TS 里写一份：调色板在 `lib/colors.ts`（Claude 深色的默认值），主题只写和默认不同的键；CSS 里一律用变量（`var(--clawd)`、`var(--bubble)`…，`ink2` → `--ink-2`、`clawdHi` → `--clawd-hi`）。
+  除了 `ink … teal` 这些，还有界面零件的颜色：`bubble`（气泡底）、`shimmer`（思考动词的高光）、`heatHi`（热度色带最热端）、`onAccent`（主色块上的字）、`shade` / `scan`（ANSI 大字的阴影线和扫描光）、`sweat`、`titleShadow`（封面副题的投影）；
+  只给 CSS 用的样式值（带透明度的影子等）在主题的 `vars` 里：`page`、`shadow`、`paperShadow`、`onAccentGlow`。
+- DS 系列是亮色：白底、鲸鱼蓝 `#4D6BFE` 主色，`q k v red pink purple blue teal` 都换成白底上看得清的深色版，`{blue:…}` 是天蓝（和主色分开）。热度色带亮底上越热越深，格子里的数字会自动挑深浅。
+- 引擎代码里别在模块顶层把 `C` 的值存起来（比如 `const X = C.clawd` 写在函数外面）——那时主题可能还没应用；在函数里读。
+- 新主题：照着 `CLAUDE` / `DEEPSEEK` 写一个 `Theme`（`id`、`ui: 'terminal' | 'chat'`、`palette`、`vars`、`host`、`shell`），boot 和封面不用改。
 
 ## 6. 配乐
 
@@ -233,13 +281,25 @@ music: {
 | `npm run audio` | 只重做音轨、重新封装（视频时长和当前动画对不上会拒绝）。`--wav out/a.wav --only music` 只导出 WAV |
 | `npm run cover` | 导出封面：`out/cover-4x3.png`（1920×1440，B 站投稿上传用）、`out/cover-16x10.png`（1920×1200）、`out/cover-16x9.png`（1920×1080） |
 | `npm run engine` | 和框架对比引擎文件：不给子命令就列出不一样的文件 + 框架仓库状态；`-- diff` / `-- pull [--fetch]` / `-- push`（默认开 PR，`--local` 直接改框架） / `-- pr [--all] [--web]` |
-| `npm run new -- <目录>` | （只在框架里）开一个新的视频项目 |
+| `npm run new -- <目录> [--theme deepseek]` | （只在框架里）开一个新的视频项目；`--theme deepseek` 开 DS 系列 |
+| `DEMO=deepseek npm run …` | （只在框架里）换成 DS 系列的示例片 `src/video-deepseek/`：`dev` / `snap` / `score` / `cover` / `render` 都认（PowerShell：`$env:DEMO='deepseek'; npm run dev`） |
 
 场景构建出错时，`render` / `audio` 会列出错误并中止（`--force` 硬导出）；开发时错误只影响那一章，其他章照常排。
 
 导出依赖：Node 18+、PATH 里的 `ffmpeg` / `ffprobe`、本机的 Edge 或 Chrome（找不到就用环境变量 `BROWSER` 指定路径）。
 
 ## 8. 踩过的坑
+
+- **主题要在读颜色之前定下来**：`C` 是一个对象，主题应用时改写它。`config.ts` 用 `defineVideo({ theme })`，求值时就应用主题，
+  后面的 `SEM`、各章模块读到的才是主题色；引擎里的颜色一律在函数里读（KaTeX 的 `\cO` 这些宏也改成每次渲染时现做）。
+  早先有一版主题是在 boot 里才改 `C`，结果公式里的 `\cO` 永远是橙色——就是这个原因。
+- **亮色主题的对比度**：为深色底挑的颜色（琥珀、淡紫蓝、天蓝）放到白底上只有 1.6–2.2:1，所以 DS 主题把 `q k v red pink purple blue teal` 全换成了深色版；
+  热度色带亮底上要“越热越深”；格子里的数字按格子的亮度在 `C.fg` / `C.ink` 里挑。新画面在两个主题下都截一张看看。
+- **小鲸的像素画**：参考设定图直接缩小会糊成一团（36 宽还认不出耳鳍、发箍、围裙上的鲸鱼），点阵是照着比例一格一格手画的。
+  改长相直接改 `whale-art.ts` 的点阵；举起来的手要压在鬓发前面、袖口用白色，不然和蓝头发混在一起看不出来。
+  刘海别画成两眼之间一个对称的倒三角（第一版就是这样，看着像“中间一个三角”）：下沿要高低不齐、尖朝不同方向；
+  参考图里发缕交叉的感觉，在这个分辨率下靠“一缕亮一号的蓝斜着压过去 + 另一缕从它底下穿过、两头各露一截”来表现，
+  发丝线别多（多了像格子布），也别用两条对称的斜线（上半截会围出一个三角）。
 
 - **无头 Edge 自己重新拉起**：新版 Edge 启动后可能立刻以 0 退出、换个进程继续跑，`puppeteer.launch` 会误报
   “Failed to launch the browser process: Code: 0”。`scripts/browser.mjs` 改成自己启动浏览器、固定调试端口、`puppeteer.connect`。
@@ -260,7 +320,7 @@ music: {
 
 每个视频项目里都有一份完整的引擎拷贝（项目自己能跑、能单独发布）。属于引擎的是：
 `src/engine/`、`src/main.ts`、`src/cover.ts`、`scripts/`、`index.html`、`cover.html`、`tsconfig.json`、`public/clawd.svg`、`GUIDE.md`、`.gitignore`、`.gitattributes`。
-`src/video/`、`package.json`、`vite.config.ts`、README、CLAUDE.md 是每个项目自己的，永远不同步。
+`src/video/`、`package.json`、`vite.config.ts`、README、CLAUDE.md 是每个项目自己的，永远不同步。框架里的 `src/video-deepseek/`（DS 系列的示例片）也不同步，只在 `npm run new --theme deepseek` 时拷成新项目的 `src/video/`。
 
 - `npm run engine`：默认子命令。列出和框架不一样的文件，再打印框架仓库的状态：分支 @ 短 commit、远端 URL、`gh` 可不可用。
   框架本地落后远端、或者框架工作区里有未提交的引擎改动时，会额外提示一句。
@@ -298,8 +358,10 @@ music: {
 
 ## 10. 发布（系列的约定）
 
-- 系列：科普向的叫【小克学AI】（Transformer 的前世今生），论文精读叫【小克读论文】（MixA）。封面左上角的标签就是系列名。
+- 系列：Claude 系列讲进阶知识，科普向的叫【小克学AI】（Transformer 的前世今生），论文精读叫【小克读论文】（MixA）；
+  DS 系列（小鲸）讲科普百科，系列名待定（示例片暂用【小鲸百科】）。封面左上角的标签就是系列名。
 - 前两期的简介按 B 站的格式写（时间戳、`#话题#`），结构：钩子 → 本期内容 → 章节时间戳 → 关于这支视频 → 延伸阅读 → 系列一句话 → 话题标签。
 - 固定保留三条声明：含 AI 生成内容；图中数据为示意（真实数字取自公开论文）；Clawd 是按终端图案重绘的二次创作，与 Anthropic 官方无关。
-- 参考文献的 arXiv 编号写之前先核对。简介里不要用“他 / 她”指代小克，直接写“小克”。
+  DS 系列把第三条换成：小鲸是 DeepSeek 拟人形象的像素二次创作，对话页风格致敬 DeepSeek，与深度求索官方无关。
+- 参考文献的 arXiv 编号写之前先核对。简介里不要用“他 / 她”指代小克，直接写“小克”；小鲸也直接写“小鲸”。
 - 封面：B 站投稿上传 `out/cover-4x3.png`，再看一眼投稿页的裁剪预览（第 8 节）；其他平台按需要用 16:10 / 16:9 版。

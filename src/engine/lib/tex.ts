@@ -14,8 +14,10 @@ const colorMacro = (c: string) => `\\textcolor{${hex(c)}}{#1}`
  *   \cP{…} 粉   \cU{…} 紫       \cB{…} 蓝   \cT{…} 青     \cM{…} 灰
  *   \hl{名字}{…}  给一段公式起名字，之后用 part(el, '名字') 拿到它做高亮动画
  * 一期里有固定含义的颜色，可以再起个语义化的名字：texColor('\\cG', C.pink)（梯度）。
+ * 宏在每次渲染时按当前主题的 C 生成（不在模块加载时定死），亮色主题里公式的颜色也跟着换。
  */
-const MACROS: Record<string, string> = {
+const custom: Record<string, string> = {}
+const macros = (): Record<string, string> => ({
   '\\cO': colorMacro(C.clawd),
   '\\cQ': colorMacro(C.q),
   '\\cK': colorMacro(C.k),
@@ -27,11 +29,12 @@ const MACROS: Record<string, string> = {
   '\\cT': colorMacro(C.teal),
   '\\cM': colorMacro(C.dim),
   '\\hl': '\\htmlClass{tp-#1}{#2}',
-}
+  ...custom,
+})
 
 /** 注册一个着色宏，比如 texColor('\\cG', C.pink) 之后公式里就能写 \cG{\nabla L}。在场景构建之前调用 */
 export function texColor(name: string, color: string) {
-  MACROS[name] = colorMacro(color)
+  custom[name] = colorMacro(color)
 }
 
 /** 渲染一段 TeX，返回一个 div（还没有定位） */
@@ -42,7 +45,7 @@ export function tex(src: string, { display = true, cls = '' }: { display?: boole
     throwOnError: false,
     strict: 'ignore',
     trust: (ctx) => ctx.command === '\\htmlClass',
-    macros: { ...MACROS },
+    macros: macros(),
   })
   return el
 }

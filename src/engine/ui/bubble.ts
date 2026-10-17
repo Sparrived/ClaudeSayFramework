@@ -1,7 +1,7 @@
 import { gsap } from 'gsap'
 import { h, s, set, hide } from '../lib/dom'
 import { BUBBLE } from '../layout'
-import { C } from '../lib/colors'
+import { C, rgba } from '../lib/colors'
 import type { Sfx } from '../audio/sfx'
 
 /** 全局语速系数：>1 变慢，<1 变快。由 src/video/config.ts 的 tempo 设置 */
@@ -136,17 +136,28 @@ function readingUnits(text: string) {
   return u
 }
 
+/** 说话的人：名牌上的名字和颜色（演员 Actor 就满足这个形状） */
+export interface Speaker {
+  name: string
+  color: string
+}
+
 export class Bubble {
   readonly el: HTMLDivElement
   readonly text: HTMLDivElement
+  /** 名牌：说话人不是讲解员时，嵌在气泡左上角的边框上 */
+  readonly tag: HTMLDivElement
+  private readonly tail: SVGSVGElement
+  private guest: Speaker | null = null
 
   constructor(parent: HTMLElement) {
     this.text = h('div', { class: 'bubble-text' })
-    // 像素风的小尾巴，指向左边的 Clawd
-    const tail = s('svg', { class: 'bubble-tail', viewBox: '0 0 5 7', width: 30, height: 42, 'shape-rendering': 'crispEdges' }, [
+    // 像素风的小尾巴，指向左边的讲解员
+    this.tail = s('svg', { class: 'bubble-tail', viewBox: '0 0 5 7', width: 30, height: 42, 'shape-rendering': 'crispEdges' }, [
       s('path', { d: 'M5 0H3V1H2V2H1V3H0V4H1V5H2V6H3V7H5Z', fill: C.clawd }),
     ])
-    this.el = h('div', { class: 'bubble' }, [tail, this.text])
+    this.tag = h('div', { class: 'bubble-tag' })
+    this.el = h('div', { class: 'bubble' }, [this.tail, this.tag, this.text])
     Object.assign(this.el.style, {
       left: `${BUBBLE.left}px`,
       top: `${BUBBLE.top}px`,
@@ -155,6 +166,20 @@ export class Bubble {
     })
     parent.append(this.el)
     gsap.set(this.el, { autoAlpha: 0, transformOrigin: '0% 50%' })
+    gsap.set(this.tag, { autoAlpha: 0 })
+  }
+
+  /**
+   * 换说话人：guest 为 null 表示讲解员自己（尾巴指向他、没有名牌，气泡是主色）；
+   * 别人说话时，气泡边框换成他的颜色、左上角亮出名牌、尾巴藏起来。和上一句同一个人就什么也不做。
+   */
+  speaker(tl: gsap.core.Timeline, guest: Speaker | null, t: number) {
+    if (guest === this.guest) return
+    this.guest = guest
+    set(tl, this.el, { borderColor: rgba(guest?.color ?? C.clawd, 0.9) }, t)
+    set(tl, this.tail, { autoAlpha: guest ? 0 : 1 }, t)
+    if (guest) set(tl, this.tag, { autoAlpha: 1, text: guest.name, backgroundColor: guest.color }, t)
+    else set(tl, this.tag, { autoAlpha: 0 }, t)
   }
 
   line(markup: string): Line {

@@ -70,9 +70,7 @@
   background: #f4f1ea;
   color: #1d1b19;
   font-family: 'Times New Roman', 'Liberation Serif', 'Nimbus Roman', var(--serif), serif;
-  box-shadow:
-    0 34px 80px rgba(0, 0, 0, 0.55),
-    0 0 0 1px rgba(255, 255, 255, 0.05);
+  box-shadow: var(--paper-shadow);
 }
 .pp-stamp {
   position: absolute;
@@ -127,4 +125,18 @@
   padding: 1px 4px;
   border-radius: 4px;
   background: linear-gradient(var(--hl), var(--hl)) no-repeat 0 0 / 0% 100%;
+}
+
+/* ── 对话页的首页（kit/chat.ts：DS 系列的片头片尾）── */
+.ch-hello {
+  translate: -50% -50%;
+  font: 700 58px/1.2 var(--sans);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+.ch-sub {
+  translate: -50% -50%;
+  color: var(--dim);
+  font: 400 30px var(--sans);
+  white-space: nowrap;
 }

@@ -1,22 +1,44 @@
 // 从框架开一个新的视频项目（只在框架里有，不会拷进新项目）：
 //   npm run new -- ClaudeSayResNet                          → 和框架并排的 ../ClaudeSayResNet
 //   npm run new -- ClaudeSayResNet --title "ResNet 为什么要走捷径" --slug clawd-resnet
+//   npm run new -- WhaleSayRainbow --theme deepseek --title "彩虹是怎么来的"   → DS 系列（小鲸、亮色对话页）
 //   npm run new -- D:/somewhere/ClaudeSayXxx --no-install --git
 //
 // 新项目是框架的一份完整拷贝（引擎 + 脚本 + 示例片），自己就能跑、能单独发布到 GitHub；
+// --theme claude（默认）拿 src/video 的示例片，--theme deepseek 拿 src/video-deepseek 的示例片。
 // 以后框架有更新，在新项目里 npm run engine -- pull 拿过去（见 GUIDE.md「引擎的同步」）。
 import { spawnSync } from 'node:child_process'
-import { cpSync, existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { cpSync, existsSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { flag, opt, positional } from './common.mjs'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
-const [target] = positional(['title', 'slug', 'port'])
+const [target] = positional(['title', 'slug', 'port', 'theme'])
 if (!target) {
-  console.log('用法：npm run new -- <项目目录名或路径> [--title 片名] [--slug 导出文件名] [--port 端口] [--no-install] [--git]')
+  console.log('用法：npm run new -- <项目目录名或路径> [--theme claude|deepseek] [--title 片名] [--slug 导出文件名] [--port 端口] [--no-install] [--git]')
   process.exit(1)
 }
+/** 系列：claude（Clawd、深色终端，默认）/ deepseek（小鲸、亮色对话页） */
+const SERIES = {
+  claude: {
+    demo: 'src/video',
+    slug: 'clawd',
+    host: 'Claude Code 的橙色像素小人 **Clawd** 当讲解员',
+    credit: 'Clawd 与 Claude Code 终端风格致敬 Anthropic；本片与 Anthropic 官方无关。',
+    tags: '小克学AI / 小克读论文',
+  },
+  deepseek: {
+    demo: 'src/video-deepseek',
+    slug: 'whale',
+    host: 'DeepSeek 的拟人形象 **小鲸**（像素画）当讲解员，亮色对话页',
+    credit: '小鲸是 DeepSeek 拟人形象的像素二次创作，对话页风格致敬 DeepSeek；本片与深度求索官方无关。',
+    tags: '小鲸百科',
+  },
+}
+const theme = opt('theme', 'claude')
+const series = SERIES[theme]
+if (!series) throw new Error(`没有「${theme}」这个系列（现有：${Object.keys(SERIES).join(' / ')}）`)
 
 const dest = isAbsolute(target) ? resolve(target) : resolve(ROOT, '..', target)
 const inside = relative(ROOT, dest)
@@ -32,15 +54,17 @@ const kebab = (s) =>
     .toLowerCase()
 const pkgName = kebab(name) || 'claude-say-video'
 const title = opt('title', name)
-/** 导出文件名：ClaudeSayResNet → clawd-resnet（和前两期的 clawd-transformer、clawd-mixa 一个风格） */
-const slug = opt('slug', `clawd-${name.replace(/^ClaudeSay/i, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'video'}`)
+/** 导出文件名：ClaudeSayResNet → clawd-resnet（和前两期的 clawd-transformer、clawd-mixa 一个风格）；DS 系列是 whale-xxx */
+const bare = name.replace(/^(ClaudeSay|WhaleSay|DeepSeekSay)/i, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+const slug = opt('slug', `${series.slug}-${bare || 'video'}`)
 /** 开发服务器端口：按项目名算一个 5200–5899 之间的数，几个项目同时开着也不打架 */
 const port = Number(opt('port', 5200 + ([...name].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7) % 700)))
 const fw = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8'))
 
 // ── 1. 拷贝：引擎、脚本、示例片，不要依赖、产物和本机配置 ──
 const SKIP_TOP = new Set(['node_modules', 'out', 'shots', '.work', 'dist', '.git'])
-const SKIP = new Set(['scripts/new.mjs', 'README.md', 'CLAUDE.md'])
+// 框架自己的第二支示例片不进新项目（DS 系列的项目会把它拷成 src/video，见下）
+const SKIP = new Set(['scripts/new.mjs', 'README.md', 'CLAUDE.md', 'src/video-deepseek'])
 cpSync(ROOT, dest, {
   recursive: true,
   filter: (src) => {
@@ -50,6 +74,12 @@ cpSync(ROOT, dest, {
     return !/\.local(\.|$)/.test(basename(rel)) && !rel.endsWith('.log')
   },
 })
+
+// 这个系列的示例片当新项目的 src/video
+if (series.demo !== 'src/video') {
+  rmSync(join(dest, 'src/video'), { recursive: true, force: true })
+  cpSync(join(ROOT, series.demo), join(dest, 'src/video'), { recursive: true })
+}
 
 const edit = (file, fn) => {
   const p = join(dest, file)
@@ -79,7 +109,17 @@ if (existsSync(join(dest, 'package-lock.json'))) {
 }
 
 // ── 3. 端口、片名、导出文件名 ──
-edit('vite.config.ts', (src) => src.replace(/\b5170\b/g, String(port)))
+// vite.config.ts 写一份干净的：框架那份里切换示例片的 DEMO 开关，新项目用不上
+writeFileSync(
+  join(dest, 'vite.config.ts'),
+  `import { defineConfig } from 'vite'
+
+// 开发服务器的端口：每个视频项目各用一个（npm run new 会按项目名换一个），几个项目可以同时开着
+export default defineConfig({
+  server: { port: ${port} },
+})
+`,
+)
 edit('.claude/launch.json', (src) => src.replace(/\b5170\b/g, String(port)))
 edit('src/video/config.ts', (src) => {
   const out = src.replace(/^(\s*title: )'[^']*'/m, `$1${quote(title)}`).replace(/^(\s*slug: )'[^']*'/m, `$1${quote(slug)}`)
@@ -92,7 +132,7 @@ writeFileSync(
   join(dest, 'README.md'),
   `# ${title}
 
-用 ClaudeSayFramework 制作的讲解视频：Claude Code 的橙色像素小人 **Clawd** 当讲解员，
+用 ClaudeSayFramework 制作的讲解视频：${series.host}，
 台词、画面、配乐和导出全部由代码完成（Vite + TypeScript + GSAP + KaTeX + D3，Puppeteer + FFmpeg 导出）。
 
 ## 快速上手
@@ -126,7 +166,7 @@ npm run engine                       # 和框架对比引擎文件；push 在框
 
 ## 致谢
 
-- Clawd 与 Claude Code 终端风格致敬 Anthropic；本片与 Anthropic 官方无关。
+- ${series.credit}
 `,
 )
 writeFileSync(
@@ -143,7 +183,7 @@ src/engine/、scripts/、入口文件和 GUIDE.md 是框架的拷贝：通用的
 ## 这一期
 
 - 主题：（待定）
-- 系列标签：（比如 小克学AI / 小克读论文）
+- 系列标签：（比如 ${series.tags}）
 - 颜色的固定含义：（写在 src/video/config.ts 的 SEM 里，也在这里记一笔）
 `,
 )
@@ -159,11 +199,11 @@ if (flag('git')) spawnSync('git', ['init', '-b', 'main'], { cwd: dest, stdio: 'i
 
 console.log(`
 新项目：${dest}
-  片名 ${title} · 导出 out/${slug}.mp4 · 开发端口 ${port}
+  系列 ${theme} · 片名 ${title} · 导出 out/${slug}.mp4 · 开发端口 ${port}
 
 接下来：
   1. 改 src/video/config.ts：片名、进度标尺、配乐、封面
-  2. 先为题目设计画面，再把 src/video/scenes/ 里的示例章节换成自己的（第一章用 opening()，最后一章用 ending()）
+  2. 先为题目设计画面，再把 src/video/scenes/ 里的示例章节换成自己的（第一章用 ${theme === 'deepseek' ? 'chatOpening()' : 'opening()'}，最后一章用 ${theme === 'deepseek' ? 'chatEnding()' : 'ending()'}）
   3. npm run dev 边写边看；npm run render 导出成片
   4. 做完回顾一下：新做的通用零件 npm run engine -- push 还给框架——push 会在框架仓库开一个 PR，人工审阅合并后其他项目 pull --fetch 才能拿到（GUIDE.md 第 0、9 节）
 `)

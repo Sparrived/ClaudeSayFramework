@@ -62,7 +62,7 @@ export function createBanner(
   const chh = cell * 2
   const width = cols * cw
   const height = grid.length * chh
-  const shade = mix(color, C.ink, 0.5)
+  const shade = mix(color, C.shade, 0.5)
 
   const colGroups: SVGGElement[] = []
   for (let c = 0; c < cols; c++) {
@@ -73,7 +73,7 @@ export function createBanner(
     })
     colGroups.push(g)
   }
-  const scan = s('rect', { x: -cw, y: -4, width: cw, height: height + 8, fill: C.fg })
+  const scan = s('rect', { x: -cw, y: -4, width: cw, height: height + 8, fill: C.scan })
   const el = s(
     'svg',
     { class: 'banner', viewBox: `0 0 ${width} ${height}`, width, height, overflow: 'visible', 'aria-label': text },

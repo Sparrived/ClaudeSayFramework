@@ -1,15 +1,14 @@
 import { gsap } from 'gsap'
 import { h, rand, set } from './dom'
-import { C, diverge, heat } from './colors'
+import { C, diverge, heat, luma } from './colors'
 import type { Mat } from './linalg'
 
 type TL = gsap.core.Timeline
 
-/** 格子里数字的颜色：底色太亮（比如热度色带的亮黄端）时换成深色，不然看不清 */
+/** 格子里数字的颜色：亮格子（比如热度色带的亮黄端）用深色字，暗格子用浅色字。深色、亮色主题都成立 */
 function inkOn(bg: string) {
-  const n = parseInt(bg.slice(1), 16)
-  const lum = (0.2126 * ((n >> 16) & 255) + 0.7152 * ((n >> 8) & 255) + 0.0722 * (n & 255)) / 255
-  return lum > 0.62 ? C.ink : C.fg
+  const [dark, light] = luma(C.ink) < luma(C.fg) ? [C.ink, C.fg] : [C.fg, C.ink]
+  return luma(bg) > 0.62 ? dark : light
 }
 
 export interface HeatOptions {

@@ -12,7 +12,7 @@
 .grid {
   position: absolute;
   inset: 0;
-  background-image: radial-gradient(circle, rgba(238, 234, 226, 0.07) 2.5px, transparent 3px);
+  background-image: radial-gradient(circle, color-mix(in srgb, var(--fg) 7%, transparent) 2.5px, transparent 3px);
   background-size: 48px 48px;
   background-position: 24px 24px; /* 4:3 版由 cover.ts 往下挪，对齐中间的 16:9 范围 */
 }
@@ -59,7 +59,7 @@
 .tag {
   padding: 14px 36px 18px;
   background: var(--clawd);
-  color: var(--ink);
+  color: var(--on-accent);
   font: 900 64px/1 var(--sans);
   letter-spacing: 0.04em;
 }
@@ -95,8 +95,8 @@
   line-height: 1;
   letter-spacing: 0.01em;
   white-space: nowrap;
-  /* 和字符画的“阴影线”同一个思路：一道硬边的暗橙色偏移 */
-  text-shadow: 7px 7px 0 #6f3b2c;
+  /* 和字符画的“阴影线”同一个思路：一道硬边的偏移（Claude 主题是暗橙色） */
+  text-shadow: 7px 7px 0 var(--title-shadow);
 }
 
 .prompt {
@@ -107,7 +107,7 @@
   display: flex;
   align-items: center;
   padding: 0 44px;
-  border: 3px solid rgba(154, 149, 139, 0.7);
+  border: 3px solid color-mix(in srgb, var(--dim) 70%, transparent);
   border-radius: 22px;
 }
 .prompt-line {
@@ -140,4 +140,72 @@
   bottom: 52px; /* = cover.ts 的 FOOT_BOTTOM；4:3 版由 cover.ts 往上挪 */
   color: var(--faint);
   font: 400 28px var(--mono);
+}
+
+/* ── DS 系列（对话页）的封面：圆角胶囊标签、圆角输入卡片 ── */
+.ui-chat .tag,
+.ui-chat .badge {
+  clip-path: none;
+  border-radius: 999px;
+}
+.ui-chat .badge {
+  color: var(--clawd);
+}
+.chat-card {
+  justify-content: space-between;
+  gap: 30px;
+  padding: 0 22px 0 52px;
+  border: 2px solid var(--line);
+  border-radius: 44px;
+  background: var(--ink);
+  box-shadow: 0 14px 44px color-mix(in srgb, var(--fg) 10%, transparent);
+}
+.chat-card .cp-caret {
+  display: inline-block;
+  width: 5px;
+  height: 1.1em;
+  margin-left: 6px;
+  background: var(--clawd);
+}
+.cc-tools {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+.cc-pill {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 64px;
+  padding: 0 28px 0 22px;
+  border: 2px solid var(--line);
+  border-radius: 32px;
+  color: var(--dim);
+  font: 500 30px var(--sans);
+  white-space: nowrap;
+}
+.cc-pill.on {
+  border-color: color-mix(in srgb, var(--clawd) 45%, transparent);
+  background: color-mix(in srgb, var(--clawd) 12%, var(--ink));
+  color: var(--clawd);
+}
+.cc-pill svg {
+  width: 32px;
+  height: 32px;
+}
+.cc-send {
+  display: grid;
+  place-items: center;
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  background: var(--clawd);
+  color: #fff;
+}
+.cc-send svg {
+  width: 38px;
+  height: 38px;
+}
+.ui-chat .foot {
+  font-family: var(--sans);
 }

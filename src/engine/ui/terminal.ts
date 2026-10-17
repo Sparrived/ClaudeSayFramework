@@ -1,84 +1,50 @@
 import { gsap } from 'gsap'
 import { h, set, at } from '../lib/dom'
-import { C } from '../lib/colors'
-import { BUBBLE, FOOTER_Y, HEADING_Y, MARGIN, PROMPT, RULER_Y, W } from '../layout'
+import { C, rgba } from '../lib/colors'
+import { BUBBLE, FOOTER_Y, HEADING_Y, MARGIN, PROMPT, W } from '../layout'
 import { typeset } from './bubble'
+import { Ruler } from './ruler'
+import type { Shell, ShellOptions, ThinkOptions } from './shell'
 import type { Sfx } from '../audio/sfx'
 
 type TL = gsap.core.Timeline
-
-export interface TerminalOptions {
-  /**
-   * 顶部进度标尺的各站（按顺序）：可以是年代（'2014'、'2017'…），也可以是章节（'开场'、'瓶颈'…）。
-   * 章节用 d.chapter({ step }) 把标记移过去；空数组表示不要标尺。
-   */
-  stops: readonly string[]
-  /** 输入框里的灰色占位提示，比如 'Try "讲讲 Transformer 的前世今生"' */
-  placeholder: string
-}
 
 // Claude Code 的思考指示器：· ✢ ✳ ✶ ✻ ✽ 来回循环
 const SPIN = ['·', '✢', '✳', '✶', '✻', '✽']
 
 /**
- * 终端界面：顶部进度标尺、对话记录里的问题、底部输入框和提示栏。
+ * 终端界面（Claude 系列的外壳）：顶部进度标尺、对话记录里的问题、底部输入框和提示栏。
  * 视觉上对应 Claude Code 的真实界面元素。
  */
-export class Terminal {
+export class Terminal implements Shell {
   readonly root: HTMLDivElement
   readonly prompt: HTMLDivElement
   readonly rulerEl: HTMLDivElement
   readonly footerEl: HTMLDivElement
-  private readonly stops: readonly string[]
+  private readonly ruler: Ruler
   private readonly line: HTMLDivElement
   private readonly cursor: HTMLSpanElement
   private readonly placeholder: HTMLSpanElement
   private readonly footRight: HTMLDivElement
-  private readonly stopX: number[]
-  private readonly stopLabels: HTMLDivElement[]
-  private readonly marker: HTMLDivElement
-  private readonly fill: HTMLDivElement
-  private stepIdx = -1
   private headingCur: HTMLElement | null = null
   private footCur: HTMLElement | null = null
 
   constructor(
     parent: HTMLElement,
     private readonly sfx: Sfx,
-    o: TerminalOptions,
+    o: ShellOptions,
   ) {
     this.root = h('div', { class: 'chrome' })
     parent.append(this.root)
-    this.stops = o.stops
 
     // ── 进度标尺 ───────────────────────────────
-    const x0 = 132
-    const x1 = W - 132
-    const n = this.stops.length
-    this.stopX = this.stops.map((_, i) => (n > 1 ? x0 + ((x1 - x0) * i) / (n - 1) : (x0 + x1) / 2))
-    this.rulerEl = h('div', { class: 'ruler' })
-    const base = at(h('div', { class: 'ruler-line' }), x0, RULER_Y)
-    base.style.width = `${x1 - x0}px`
-    this.fill = at(h('div', { class: 'ruler-fill' }), x0, RULER_Y)
-    this.fill.style.width = `${x1 - x0}px`
-    this.marker = at(h('div', { class: 'ruler-marker' }), 0, RULER_Y)
-    this.stopLabels = this.stops.map((y, i) => {
-      this.rulerEl.append(at(h('div', { class: 'ruler-tick' }), this.stopX[i], RULER_Y))
-      const label = at(h('div', { class: 'ruler-label', text: y }), this.stopX[i], RULER_Y + 12)
-      this.rulerEl.append(label)
-      return label
-    })
-    if (n) {
-      this.rulerEl.prepend(base, this.fill)
-      this.rulerEl.append(this.marker)
-    }
-    gsap.set(this.fill, { scaleX: 0, transformOrigin: '0% 50%' })
-    gsap.set(this.marker, { x: this.stopX[0] ?? x0, xPercent: -50, yPercent: -50, autoAlpha: 0 })
+    this.ruler = new Ruler(o.stops)
+    this.rulerEl = this.ruler.el
     this.root.append(this.rulerEl)
 
     // ── 输入框 ─────────────────────────────────
     this.cursor = h('span', { class: 'cursor', text: ' ' })
-    this.placeholder = h('span', { class: 'placeholder', text: o.placeholder })
+    this.placeholder = h('span', { class: 'placeholder', text: o.placeholder ?? '' })
     this.line = h('div', { class: 'prompt-line' }, [h('span', { class: 'gt', text: '>' }), this.cursor, this.placeholder])
     this.prompt = h('div', { class: 'prompt' }, [this.line])
     Object.assign(this.prompt.style, {
@@ -104,18 +70,7 @@ export class Terminal {
 
   /** 把进度标尺的标记移到 name 这一站 */
   step(tl: TL, name: string, t: number) {
-    const i = this.stops.indexOf(name)
-    if (i < 0) throw new Error(`进度标尺上没有「${name}」这一站（现有：${this.stops.join(' / ') || '无'}）`)
-    if (i === this.stepIdx) return t
-    const last = Math.max(1, this.stops.length - 1)
-    const dur = this.stepIdx < 0 ? 0.01 : Math.min(1.4, 0.45 + Math.abs(i - this.stepIdx) * 0.16)
-    if (this.stepIdx < 0) set(tl, this.marker, { autoAlpha: 1 }, t)
-    tl.to(this.marker, { x: this.stopX[i], duration: dur, ease: 'power2.inOut' }, t)
-    tl.to(this.fill, { scaleX: i / last, duration: dur, ease: 'power2.inOut' }, t)
-    if (this.stepIdx >= 0) set(tl, this.stopLabels[this.stepIdx], { color: C.faint, fontWeight: 400 }, t)
-    set(tl, this.stopLabels[i], { color: C.clawd, fontWeight: 600 }, t + dur * 0.6)
-    this.stepIdx = i
-    return t + dur
+    return this.ruler.step(tl, name, t)
   }
 
   /** 在输入框里打出问题并回车，问题随即出现在顶部的对话记录里 */
@@ -137,7 +92,7 @@ export class Terminal {
     tl.fromTo(
       this.prompt,
       { borderColor: C.fg },
-      { borderColor: 'rgba(136,136,136,0.6)', duration: 0.45, ease: 'power1.out', immediateRender: false },
+      { borderColor: rgba(C.prompt, 0.6), duration: 0.45, ease: 'power1.out', immediateRender: false },
       submit,
     )
     set(tl, q, { display: 'none' }, submit + 0.04)
@@ -165,7 +120,7 @@ export class Terminal {
   }
 
   /** “✻ Pondering… (esc to interrupt)” */
-  think(tl: TL, t: number, dur: number, verb = 'Pondering') {
+  think(tl: TL, t: number, dur: number, { verb = 'Pondering' }: ThinkOptions = {}) {
     const glyphs = SPIN.map((g) => h('span', { class: 'spin-glyph', text: g }))
     const spin = h('span', { class: 'spin' }, glyphs)
     const word = h('span', { class: 'think-word', text: `${verb}…` })
