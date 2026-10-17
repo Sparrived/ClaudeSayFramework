@@ -117,7 +117,7 @@ export function bottleneck(d: Director) {
 - `d.beat(dur, fn?)`：不说话，只放画面。
 - `d.chapter({...})` 带 `banner` 时，大字在舞台正中停留约 1 秒；之后第一句的前 0.9 秒画面中央还被大字占着，
   中央的画面从 `Math.max(t + 0.9, w('…'))` 开始。
-- `d.cue(name, t?)`：给某个时刻起名字，配乐的拆分和铃音靠它对准画面。片头片尾自带 `hop`、`title`、`land`。
+- `d.cue(name, t?)`：给某个时刻起名字，配乐的拆分和铃音靠它对准画面。`opening` / `chatOpening` 自带 `hop`，`ending` / `chatEnding` 自带 `land`；`title` 由 `titleCard.reveal()` 发出。自己用 `createBanner` / `revealBanner` 做片名时，在片名完全出现的时刻手动 `d.cue('title', shown)`，否则 `music.sparkles.title` 会找不到 cue。
 - `d.hook(draw)`：重绘钩子，见下面的规矩 6。
 
 ### 必须守的规矩（不守的话，拖进度条或逐帧导出时画面会错）
@@ -136,6 +136,8 @@ export function bottleneck(d: Director) {
 9. 构建时别依赖文字宽度（中文字体是按需加载的子集，构建时可能还没到）；居中交给 CSS translate。
 10. 每章的 CSS 放在同名 `.css` 里，选择器前面加 `.scene-<章节id>`，类名带本章前缀（`tl-`、`ma-`…），免得串味。
 11. 一种颜色在一期里只表示一种东西：台词标记、公式宏、画面颜色三处一致（在 `config.ts` 的 `SEM` 里写清楚）。
+12. **SVG 的 `<g>` 在构建期带 `transform` 时，先过一遍 `wrapTransform(g, transform)`**（`lib/svg`），把平移挪到内层组。否则 GSAP 补间 `autoAlpha` 会重写外层 transform，整个图层跳回原点。
+13. **按时间出现的标注**：构建期只设初始态（`hide` / `gsap.set`），真正显示要排进时间轴，用 `tl.set([line, dot], { autoAlpha: 1 }, t)` 再补间；不要只 `hide()` 后在时间轴里直接补间——线、点会在片头就亮。
 
 ## 4. 舞台和台词
 
@@ -186,6 +188,7 @@ export function bottleneck(d: Director) {
 | 模块 | 函数 |
 | :--- | :--- |
 | `dom` | `h` 建元素 · `s` 建 SVG · `at` 定位 · `set` 时间轴上的瞬间设置 · `hide` · `pin` · `rand` |
+| `svg` | `nextId(prefix?)` 页面内唯一 id · `wrapTransform(g, transform)` 把 `<g>` 的构建期 transform 挪到内层，外层交给 GSAP |
 | `viz` | `fx` 铺满舞台的 SVG · `chip` 词块 · `box` 方框 · `label` 文字 · `arrow` / `drawArrow` / `hideArrow` · `popIn` · `fadeIn` · `fadeOut` · `countTo` 数字滚动 · `typeText` 逐字打出 · `chipRow` 一排词块 |
 | `tex` | `formula(parent, tex, x, y, { size })` 放公式 · `\hl{名字}{…}` + `part(el, 名字)` 取出一段 · `glow` / `unglow` 高亮 · `texColor('\\cG', C.pink)` 注册颜色宏。内置 `\cO \cQ \cK \cV \cR \cP \cU \cB \cT \cM` |
 | `heat` | `heatmap` 热力图（可写数字，亮格子自动用深色字）· `paint` 补间到新矩阵 · `revealHeat` · `hideHeat` |
