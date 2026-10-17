@@ -38,3 +38,4 @@ Thumbs.db
 
 # 制作过程中的草稿（截图、调试脚本、Python 虚拟环境）
 .work/
+shots/
