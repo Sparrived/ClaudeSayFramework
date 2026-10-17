@@ -138,6 +138,8 @@ export function bottleneck(d: Director) {
 11. 一种颜色在一期里只表示一种东西：台词标记、公式宏、画面颜色三处一致（在 `config.ts` 的 `SEM` 里写清楚）。
 12. **SVG 的 `<g>` 在构建期带 `transform` 时，先过一遍 `wrapTransform(g, transform)`**（`lib/svg`），把平移挪到内层组。否则 GSAP 补间 `autoAlpha` 会重写外层 transform，整个图层跳回原点。
 13. **按时间出现的标注**：构建期只设初始态（`hide` / `gsap.set`），真正显示要排进时间轴，用 `tl.set([line, dot], { autoAlpha: 1 }, t)` 再补间；不要只 `hide()` 后在时间轴里直接补间——线、点会在片头就亮。
+14. **裁切和 transform 不要挂在同一个元素上**：`clip-path` 用的是元素自己的坐标系，会跟着元素的 transform 一起动。给同一个 `<g>` 设 `clip-path`、又补间它的 `x` / `y` / `scale`，裁切框会跟着一起平移，等于没裁（表现为“门板滑出了门框”“叶片滑出了图版”）。正确做法是外层 `<g>` 只带 `clip-path`，补间内层——`plate()` 的 `clip` / `cam` 两层就是按这个结构写的。
+15. **隐藏一整组时，逐个隐藏子元素，别给父级设 `autoAlpha: 0`**：父级的 `visibility: hidden` 会通过 `visibility: inherit` 传给子元素，之后再单独让某个子元素显形也不会出现（表现为“这组东西怎么都不亮”）。构建期对子元素用 `hide(...children)`，时间轴上再分别 `set` / `fadeIn` 每个子元素。
 
 ## 4. 舞台和台词
 
