@@ -182,6 +182,7 @@ export function bottleneck(d: Director) {
 | `chatEnding(d, layer, { farewell?, thanks?, cite?, clear? })` | DS 系列片尾：发一句“谢谢小鲸，下次见！”→ 回到首页，问候语的位置换成谢谢观看，小鲸跳到中间挥手（cue `land`） |
 | `titleCard(d, layer, { word, sub?, cell? })` | 片名卡（两个系列都能用）：`.reveal(t)` 扫出大字（cue `title`）、`.hide(t)` 收起。`word` 只能是英文 / 数字 |
 | `paperPage(parent, { x, y, w?, h?, stamp?, title, authors, affil?, abstract?, colors? })` | 论文首页。标题 / 摘要里用 `[[…]]` 圈出的短语可以用 `sweep(tl, page.marks[i], t)` 荧光笔扫亮 |
+| `plate(parent, { id, x?, y?, w?, h?, r?, fill?, stroke?, shadow? })` | 全幅圆角图版：返回 `plate` / `cam` / `hud` / `under`。`enterPlate(tl, st, t)` 升起图版与投影，`camera(tl, st.cam, { from, to, at })` 推拉镜头；配套 `callout` / `calloutShow` / `calloutHide`、`hudChip`、`tag`、`stamp`、`scaleBar`、`note`、`path` / `draw`。坐标是舞台坐标，默认铺满 `STAGE` 可用区 |
 
 **画面（`engine/lib`）**
 
