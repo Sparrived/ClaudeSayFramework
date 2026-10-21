@@ -47,7 +47,7 @@ src/
 │   ├── ui/                 讲解气泡（bubble）、外壳接口（shell）：终端（terminal）/ 对话页（chat）、进度标尺（ruler）、ANSI Shadow 大字（banner）
 │   ├── audio/              音效（sfx）、配乐（score，含配器预设 MOOD）、WAV 编码
 │   ├── lib/                dom · colors · viz · tex · heat · chart · panel · blocks · linalg（见第 5 节）
-│   ├── kit/                成套画面：片头片尾 opening / ending（终端）、chatOpening / chatEnding（对话页），片名卡 titleCard、论文首页 paperPage
+│   ├── kit/                成套画面：片头片尾 opening / ending（终端）、chatOpening / chatEnding（对话页），片名卡 titleCard、论文首页 paperPage、全幅图版 plate、出处角标 Sources
 │   ├── cover/              封面
 │   └── player.ts           网页播放器（进度条、章节、快捷键）
 ├── video/                  这一期的内容
@@ -185,6 +185,7 @@ export function bottleneck(d: Director) {
 | `titleCard(d, layer, { word, sub?, cell? })` | 片名卡（两个系列都能用）：`.reveal(t)` 扫出大字（cue `title`）、`.hide(t)` 收起。`word` 只能是英文 / 数字 |
 | `paperPage(parent, { x, y, w?, h?, stamp?, title, authors, affil?, abstract?, colors? })` | 论文首页。标题 / 摘要里用 `[[…]]` 圈出的短语可以用 `sweep(tl, page.marks[i], t)` 荧光笔扫亮 |
 | `plate(parent, { id, x?, y?, w?, h?, r?, fill?, stroke?, shadow? })` | 全幅圆角图版：返回 `plate` / `cam` / `hud` / `under`。`enterPlate(tl, st, t)` 升起图版与投影，`camera(tl, st.cam, { from, to, at })` 推拉镜头；配套 `callout` / `calloutShow` / `calloutHide`、`hudChip`、`tag`、`stamp`、`scaleBar`、`note`、`path` / `draw`。坐标是舞台坐标，默认铺满 `STAGE` 可用区 |
+| `new Sources(layer, tl, pos?)` | 出处角标（两个系列都能用）：画面右下角挂一行出处，`.show(text, t, kind?)` 换一条（上一条自动淡出；`kind` 是左边的小标签，默认“论文”，也可以写“文档”“官网”“代码”），`.clear(t)` 收起。讲论文、引用数字时，每个关键说法都挂上出处 |
 
 **画面（`engine/lib`）**
 
@@ -195,7 +196,7 @@ export function bottleneck(d: Director) {
 | `viz` | `fx` 铺满舞台的 SVG · `chip` 词块 · `box` 方框 · `label` 文字 · `arrow` / `drawArrow` / `hideArrow` · `popIn` · `fadeIn` · `fadeOut` · `countTo` 数字滚动 · `typeText` 逐字打出 · `chipRow` 一排词块 |
 | `tex` | `formula(parent, tex, x, y, { size })` 放公式 · `\hl{名字}{…}` + `part(el, 名字)` 取出一段 · `glow` / `unglow` 高亮 · `texColor('\\cG', C.pink)` 注册颜色宏。内置 `\cO \cQ \cK \cV \cR \cP \cU \cB \cT \cM` |
 | `heat` | `heatmap` 热力图（可写数字，亮格子自动用深色字）· `paint` 补间到新矩阵 · `revealHeat` · `hideHeat` |
-| `chart` | `plot` 坐标系（D3 比例尺）· `line` / `drawLine` · `marks` · `vbars` / `growBars` / `setBars` · `histBars` · `hbar` / `growH` · `curvePath` · `showPlot` |
+| `chart` | `plot` 坐标系（D3 比例尺，`xLog` / `yLog` 对数轴）· `line` / `drawLine` · `marks` · `vbars` / `growBars` / `setBars` · `histBars` · `hbar` / `growH` · `curvePath` · `showPlot` |
 | `panel` | `panel` 终端风格面板（标题嵌在边框上）· `table` 数据表 |
 | `blocks` | `mblock` 矩阵“形状块”（N×d 之类） |
 | `linalg` | `rng` · `gauss` · `randn` · `matmul` · `transpose` · `softmaxRows` · `relu` · `frob` · `norm` · `trace` · `mean` · `std` · `histogram`… |

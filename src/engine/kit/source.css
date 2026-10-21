@@ -1,0 +1,24 @@
+/* 出处角标（kit/source.ts）：右边缘对齐在 (x, y) */
+.src-tag {
+  position: absolute;
+  translate: -100% -50%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 14px 6px 6px;
+  border: 1.5px solid var(--line);
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--ink-2) 94%, transparent);
+  color: var(--dim);
+  font: 20px/1.25 var(--sans);
+  white-space: nowrap;
+}
+.src-kind {
+  padding: 1px 8px 2px;
+  border-radius: 5px;
+  background: var(--ink-3);
+  color: var(--fg);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
