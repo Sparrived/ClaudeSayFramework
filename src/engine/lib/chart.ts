@@ -21,7 +21,7 @@ export interface Plot {
   axes: SVGGElement
   f: Frame
   sx: d3.ScaleLinear<number, number> | d3.ScaleLogarithmic<number, number>
-  sy: d3.ScaleLinear<number, number>
+  sy: d3.ScaleLinear<number, number> | d3.ScaleLogarithmic<number, number>
   /** 数据坐标 → 舞台坐标 */
   px(x: number, y: number): [number, number]
 }
@@ -37,6 +37,8 @@ export interface PlotOptions {
   yLabel?: string
   /** 横轴用对数刻度 */
   xLog?: boolean
+  /** 纵轴用对数刻度（跨好几个数量级的量：增长倍数、计算量、显存……）；y 的范围必须大于 0 */
+  yLog?: boolean
   grid?: boolean
   /** 只画横轴（柱状图常用） */
   noYAxis?: boolean
@@ -50,7 +52,7 @@ const fmtDefault = (v: number) => (Number.isInteger(v) ? String(v) : v.toFixed(2
  */
 export function plot(svg: SVGSVGElement, f: Frame, o: PlotOptions): Plot {
   const sx = o.xLog ? d3.scaleLog().domain(o.x).range([f.x, f.x + f.w]) : d3.scaleLinear().domain(o.x).range([f.x, f.x + f.w])
-  const sy = d3.scaleLinear().domain(o.y).range([f.y + f.h, f.y])
+  const sy = o.yLog ? d3.scaleLog().domain(o.y).range([f.y + f.h, f.y]) : d3.scaleLinear().domain(o.y).range([f.y + f.h, f.y])
   const g = s('g', { class: 'plot' })
   const axes = s('g', { class: 'plot-axes' })
   g.append(axes)
