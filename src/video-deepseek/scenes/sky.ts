@@ -7,6 +7,8 @@ import { C, mix } from '../../engine/lib/colors'
 import { formula, glow, unglow } from '../../engine/lib/tex'
 import { drawLine, growBars, plot, setBars, showPlot, vbars } from '../../engine/lib/chart'
 import { arrow, drawArrow, fadeIn, fadeOut, fx, label, popIn } from '../../engine/lib/viz'
+import { halo, motes } from '../../engine/lib/canvas'
+import { noise } from '../../engine/lib/noise'
 import { SEM } from '../config'
 
 /** 五种色光：从短波长到长波长 */
@@ -41,6 +43,12 @@ export function sky(d: Director) {
   // 散射图和柱状图各用一张铺满舞台的 svg，换画面时整张收起
   const svg = fx(L)
   const chartSvg = fx(L, { top: true })
+  // Canvas：太阳周围的一圈光晕、最后飘满天的蓝色光点（按时间现画；两个数由时间轴补间）
+  const glowing = { sun: 0, sky: 0 }
+  d.canvas(L, (ctx, t) => {
+    halo(ctx, SUN.x, SUN.y, SUN.r * 3.4 * (1 + 0.04 * noise(t * 0.8, 3)), { color: SEM.yellow, alpha: 0.45 * glowing.sun })
+    if (glowing.sky > 0) motes(ctx, t, { seed: 4, n: 140, area: [80, 160, 1840, 700], color: SEM.blue, alpha: 0.75 * glowing.sky, size: 3, rise: 10 })
+  })
   // 天空：一层淡淡的蓝，垫在最底下，最后才铺满
   const tint = h('div', { class: 'sk-tint' })
   L.prepend(tint)
@@ -133,6 +141,7 @@ ${l.nm} nm`, x, CHART.y + CHART.h + 46, { cls: 'sk-bar' })
     '阳光看着是白的，其实是{purple:紫}、{blue:蓝}、{k:绿}、{v:黄}、{r:红}好几种光混在一起。',
     (t, w) => {
       popIn(tl, sun, t + 0.1, { from: 0.7 })
+      tl.to(glowing, { sun: 1, duration: 0.8, ease: 'power1.out' }, t + 0.2)
       fadeIn(tl, sunCap, t + 0.3, { y: 8 })
       sfx.at(t + 0.1, 'pop')
       LIGHTS.forEach((l, i) => drawLine(tl, rays[i], w(l.name), { dur: 0.45 }))
@@ -157,6 +166,7 @@ ${l.nm} nm`, x, CHART.y + CHART.h + 46, { cls: 'sk-bar' })
   // 换画面：散射图收起，换成公式和柱子
   d.beat(0.5, (t) => {
     fadeOut(tl, [svg, sunCap, airCap], t, { dur: 0.35 })
+    tl.to(glowing, { sun: 0, duration: 0.35 }, t)
   })
 
   d.say(
@@ -177,6 +187,7 @@ ${l.nm} nm`, x, CHART.y + CHART.h + 46, { cls: 'sk-bar' })
     (_, w) => {
       unglow(tl, f, w('蓝光'))
       tl.to(tint, { autoAlpha: 1, duration: 1.2, ease: 'power1.inOut' }, w('满天'))
+      tl.to(glowing, { sky: 1, duration: 1.4, ease: 'power1.inOut' }, w('满天'))
       host.face(tl, 'happy', w('天空'))
       host.face(tl, 'normal', w('天空') + 2.2)
     },

@@ -7,6 +7,13 @@ import type { Bubble } from './ui/bubble'
 import type { Shell } from './ui/shell'
 import type { Sfx } from './audio/sfx'
 import { createBanner, hideBanner, revealBanner, type Banner } from './ui/banner'
+import { canvas } from './lib/canvas'
+
+/** 元素自己或任何一层祖先被 autoAlpha 藏起来了（GSAP 把 visibility 写在行内样式里，seek 之后立刻就是新值） */
+function hidden(el: HTMLElement) {
+  for (let e: HTMLElement | null = el; e; e = e.parentElement) if (e.style.visibility === 'hidden') return true
+  return false
+}
 
 export interface Chapter {
   id: string
@@ -109,6 +116,29 @@ export class Director {
   /** 按时间轴的当前状态重画所有钩子 */
   redraw() {
     for (const draw of this.hooks) draw()
+  }
+
+  /**
+   * 在图层里铺一张 Canvas（1920×1080，舞台坐标），按时间轴的当前时刻 t 重画——重绘钩子的 Canvas 版：
+   *   d.canvas(L, (ctx, t) => motes(ctx, t, { n: 200, area: [200, 150, 1700, 760] }))
+   * 每次重画前自动清空；图层（或画布所在的任何一层）被隐藏时直接跳过，不在看不见的章节上花时间。
+   * draw 必须只由 t 和场景里的数决定（种子噪声用 lib/noise），拖进度条、逐帧导出才对得上。
+   * 默认垫在图层最底下，top: true 盖在图层最上面。返回画布（el 可以拿去补间 autoAlpha）。
+   */
+  canvas(layer: HTMLElement, draw: (ctx: CanvasRenderingContext2D, t: number) => void, o: { top?: boolean } = {}) {
+    const cv = canvas(layer, o)
+    let dirty = false
+    this.hook(() => {
+      if (hidden(cv.el)) {
+        if (dirty) cv.clear()
+        dirty = false
+        return
+      }
+      cv.clear()
+      draw(cv.ctx, this.tl.time())
+      dirty = true
+    })
+    return cv
   }
 
   /**

@@ -46,7 +46,7 @@ src/
 │   ├── actors/             演员：Actor 基类、像素画工具 pixel、Clawd、小鲸 Whale（点阵在 whale-art.ts）
 │   ├── ui/                 讲解气泡（bubble）、外壳接口（shell）：终端（terminal）/ 对话页（chat）、进度标尺（ruler）、ANSI Shadow 大字（banner）
 │   ├── audio/              音效（sfx）、配乐（score，含配器预设 MOOD）、WAV 编码
-│   ├── lib/                dom · colors · viz · tex · heat · chart · panel · blocks · linalg（见第 5 节）
+│   ├── lib/                dom · colors · viz · tex · heat · chart · panel · blocks · linalg · noise · canvas（见第 5 节）
 │   ├── kit/                成套画面：片头片尾 opening / ending（终端）、chatOpening / chatEnding（对话页），片名卡 titleCard、论文首页 paperPage
 │   ├── cover/              封面
 │   └── player.ts           网页播放器（进度条、章节、快捷键）
@@ -120,6 +120,7 @@ export function bottleneck(d: Director) {
 - `d.cue(name, t?)`：给某个时刻起名字，配乐的拆分和铃音靠它对准画面。`opening` / `chatOpening` 自带 `hop`，`ending` / `chatEnding` 自带 `land`；`title` 由 `titleCard.reveal()` 发出。自己用 `createBanner` / `revealBanner` 做片名时，在片名完全出现的时刻手动 `d.cue('title', shown)`，否则 `music.sparkles.title` 会找不到 cue。
 - `d.hook(draw)`：重绘钩子，见下面的规矩 6。
 
+- `d.canvas(layer, (ctx, t) => …, { top? })`：在图层里铺一张 1920×1080 的 Canvas，每次 seek / 播放推进后按当前时刻 `t` 重画，见下面的规矩 16。
 ### 必须守的规矩（不守的话，拖进度条或逐帧导出时画面会错）
 
 1. **一切动画都排在 `d.tl` 上**，用绝对时刻定位。不要用 `setTimeout`、`requestAnimationFrame`、CSS transition / animation。
@@ -130,7 +131,8 @@ export function bottleneck(d: Director) {
 5. 同一个元素的同一个属性，两段补间不要在时间上重叠（重叠时后渲染的会盖掉前一个的收尾）。
 6. **由数算出来的图**（旋转的向量、实时读数、随参数变化的柱子）：把数放进普通对象交给 GSAP 补间，
    用 `d.hook(() => { 按当前的数重画 })` 画图。GSAP 在 seek 时不触发 `onUpdate`，不能靠它。示例片 math 章的温度 τ 就是这么做的。
-7. 随机数一律带种子：`rand(seed)`（`lib/dom`）、`rng` / `gauss` / `randn`（`lib/linalg`）。不要用 `Math.random()`。
+7. 随机数一律带种子：`rand(seed)`（`lib/dom`）、`rng` / `gauss` / `randn`（`lib/linalg`）、`hash` / `noise` / `noise2` / `fbm`（`lib/noise`）。不要用 `Math.random()`。
+   构建时一次性抽好的数据用 `rng`；在钩子里按时刻 `t` 现算的晃动、漂移用 `noise(t * 频率, 种子)`——同样的输入永远得到同样的值。
 8. 随时间换文字：`set(tl, el, { text: '0.10' }, t)`（TextPlugin，往回拖能还原，`'0.0'` 这种字符串原样保留）；
    数字滚动用 `countTo`。不要用 `textContent` 换数字字符串（GSAP 会把 `'0.0'` 当成数字 0 写回去）。
 9. 构建时别依赖文字宽度（中文字体是按需加载的子集，构建时可能还没到）；居中交给 CSS translate。
@@ -141,6 +143,11 @@ export function bottleneck(d: Director) {
 14. **裁切和 transform 不要挂在同一个元素上**：`clip-path` 用的是元素自己的坐标系，会跟着元素的 transform 一起动。给同一个 `<g>` 设 `clip-path`、又补间它的 `x` / `y` / `scale`，裁切框会跟着一起平移，等于没裁（表现为“门板滑出了门框”“叶片滑出了图版”）。正确做法是外层 `<g>` 只带 `clip-path`，补间内层——`plate()` 的 `clip` / `cam` 两层就是按这个结构写的。
 15. **隐藏一整组时，逐个隐藏子元素，别给父级设 `autoAlpha: 0`**：父级的 `visibility: hidden` 会通过 `visibility: inherit` 传给子元素，之后再单独让某个子元素显形也不会出现（表现为“这组东西怎么都不亮”）。构建期对子元素用 `hide(...children)`，时间轴上再分别 `set` / `fadeIn` 每个子元素。
 
+16. **Canvas 也走重绘钩子**：成百上千个粒子、光效不适合一个个建 DOM，画在 Canvas 上。Canvas 不进时间轴，所以每一帧都要按时刻**整张重画**：
+    `d.canvas(L, (ctx, t) => { … })`（就是 `d.hook` 外加自动清空，`t` 取自 `d.tl.time()`）；自己用 `canvas(L)` + `d.hook` 时，在钩子里先 `clear()`、再读 `d.tl.time()`。
+    画什么只能由 `t`、种子和场景里的数决定：粒子的位置写成 `t` 的函数（`hash(i)` 定起点，`noise(t * 0.2 + i)` 定漂移），不要在钩子里累加状态（“上一帧的位置 + 速度”往回拖就错了）；
+    要淡入淡出、开关的量放进普通对象交给 GSAP 补间，钩子里读它（示例片 math 章的追光：`tl.to(light, { on: 1 }, t)`，钩子里 `alpha: 0.32 * light.on`）。
+    图层或画布被 `autoAlpha` 藏起来时 `d.canvas` 自动跳过不画，不用为看不见的章节操心导出速度。
 ## 4. 舞台和台词
 
 ### 舞台坐标（`engine/layout.ts`）
@@ -200,8 +207,15 @@ export function bottleneck(d: Director) {
 | `blocks` | `mblock` 矩阵“形状块”（N×d 之类） |
 | `linalg` | `rng` · `gauss` · `randn` · `matmul` · `transpose` · `softmaxRows` · `relu` · `frob` · `norm` · `trace` · `mean` · `std` · `histogram`… |
 | `colors` | `C`（当前主题的颜色，和 CSS 变量 `--clawd`、`--q`… 对应）· `mix` · `rgba` · `luma` · `diverge` / `diverge2` 发散色带 · `heat` 顺序色带 |
+| `noise` | `hash(n)` / `hash2(a, b)` 整数 → [0, 1) · `noise(x, seed)` 一维值噪声 [-1, 1] · `noise2(x, y, seed)` 二维 · `fbm(x, seed, octaves?)` 分形噪声（大起伏带小抖动：烛光、手持感） |
+| `canvas` | `canvas(layer, { top? })` 铺满舞台的画布，返回 `{ el, ctx, clear }`（一般用 `d.canvas`）· `halo(ctx, x, y, r, { color, alpha, squash })` 径向光晕（`squash` 压扁成地上的一摊光）· `beam(ctx, from, to, { spread, start, blur })` 体积光束 · `beamMask(from, to, …)` 同形状的遮罩 · `motes(ctx, t, { n, area, drift, rise, twinkle, mask })` 漂浮的尘埃 / 光点 · `rain(ctx, t, { n, area, speed, angle, depth, mask })` 雨（裁在 `area` 里）· `ripples(ctx, t, { area, rate, flat })` 地上的涟漪 · `bokeh(ctx, t, { colors, size })` 景深光斑 · `stars(ctx, t, { n, area, twinkle })` 星空 |
 
 **演员（`engine/actors`）**
+`canvas` 里的效果都是“`t` + 种子 → 画面”的纯函数，`area` 是 `[x0, y0, x1, y1]`、`mask(x, y)` 返回 0–1 的亮度（`motes(…, { mask: beamMask(…) })` 就是光束里的尘埃）。
+颜色传 `#rrggbb`，不传就用主题色。合成方式 `op`（默认 `'lighter'`，两团光叠在一起变亮）只在画布内部生效，画布整体按普通透明度盖在 DOM 上：
+深色终端上浅色的光很好看；亮色主题（DS 系列）的白底上要换深一点的颜色、调高 alpha（DS 示例片 sky 章太阳的光晕、满天的蓝点就是这么调的）。
+光晕和 `tex` 的公式高亮 `glow` 是两回事，所以 Canvas 版叫 `halo`。胶片颗粒、暗角、遮幅这类整片的后期效果故意没有收进来，它们会和终端 / 对话页的外壳打架。
+
 
 所有演员都是 `Actor` 的子类，动作接口一样。每个动作都在时刻 t 往时间轴里加补间，并返回动作结束的时刻；同一个演员的动作按时间先后调用。
 

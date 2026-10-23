@@ -7,6 +7,7 @@ import { heatmap, hideHeat, paint, revealHeat } from '../../engine/lib/heat'
 import { map, randn, softmaxRows } from '../../engine/lib/linalg'
 import { drawLine, line, marks, plot, showPlot } from '../../engine/lib/chart'
 import { fadeIn, fadeOut, fx, label, popIn } from '../../engine/lib/viz'
+import { beam, beamMask, halo, motes } from '../../engine/lib/canvas'
 import { paperPage, sweep } from '../../engine/kit'
 
 const F_SOFTMAX = String.raw`\mathrm{softmax}(\mathbf{x})_i=\frac{\hl{num}{e^{x_i}}}{\hl{den}{\sum_{j} e^{x_j}}}`
@@ -93,6 +94,22 @@ export function math(d: Director) {
   })
   hide(fSoft, capA, capB, temp, readout)
 
+  // ── Canvas：一束追光，光里飘着尘埃（也是重绘钩子：每一帧按时间轴的当前时刻现画）──
+  const light = { on: 0 }
+  const LAMP: [number, number] = [960, 175]
+  const FLOOR: [number, number] = [960, 700]
+  const cone = { spread: 760, start: 60 }
+  const inCone = beamMask(LAMP, FLOOR, cone)
+  d.canvas(L, (ctx, t) => {
+    if (light.on <= 0) return
+    beam(ctx, LAMP, FLOOR, { ...cone, color: C.clawdHi, alpha: 0.32 * light.on, blur: 10 })
+    halo(ctx, FLOOR[0], FLOOR[1], 420, { color: C.clawd, alpha: 0.4 * light.on, squash: 0.18 })
+    halo(ctx, LAMP[0], LAMP[1], 70, { color: C.shimmer, alpha: 0.8 * light.on })
+    motes(ctx, t, { seed: 7, n: 240, area: [500, 150, 1420, 720], color: C.shimmer, alpha: light.on, size: 2.6, mask: (x, y) => 0.15 + inCone(x, y) * 1.6 })
+  })
+  const code = label(L, 'motes(ctx, t, { seed: 7, n: 240 })', 960, 735, { cls: 'ma-code mono' })
+  hide(code)
+
   d.chapter({
     id: 'math',
     title: '公式与图表',
@@ -162,6 +179,23 @@ export function math(d: Director) {
       clawd.look(tl, 'c', k0 + 3.6)
     },
     { min: 6.4 },
+  )
+
+  // ── 5. Canvas：光束里的尘埃，位置全由时间和种子算出来 ──
+  d.say(
+    '{o:Canvas} 也一样：光束里几百颗尘埃，位置全由时间和种子算出来。',
+    (t, w) => {
+      fadeOut(tl, [temp, readout], t + 0.1, { dur: 0.35 })
+      const c0 = Math.max(t + 0.5, w('光束'))
+      tl.to(light, { on: 1, duration: 0.9, ease: 'power2.out' }, c0)
+      sfx.at(c0, 'whoosh')
+      fadeIn(tl, code, w('时间'), { y: 8 })
+      clawd.look(tl, 'u', c0 + 0.2)
+      clawd.face(tl, 'happy', w('种子'))
+      clawd.face(tl, 'normal', w('种子') + 1.6)
+      clawd.look(tl, 'c', w('种子') + 1.6)
+    },
+    { min: 5.0 },
   )
   d.end(L)
 }
