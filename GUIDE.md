@@ -46,7 +46,7 @@ src/
 │   ├── actors/             演员：Actor 基类、像素画工具 pixel、Clawd、小鲸 Whale（点阵在 whale-art.ts）
 │   ├── ui/                 讲解气泡（bubble）、外壳接口（shell）：终端（terminal）/ 对话页（chat）、进度标尺（ruler）、ANSI Shadow 大字（banner）
 │   ├── audio/              音效（sfx）、配乐（score，含配器预设 MOOD）、WAV 编码
-│   ├── lib/                dom · colors · viz · tex · heat · chart · panel · blocks · linalg（见第 5 节）
+│   ├── lib/                dom · colors · viz · tex · heat · chart · panel · blocks · linalg · noise · canvas（见第 5 节）
 │   ├── kit/                成套画面：片头片尾 opening / ending（终端）、chatOpening / chatEnding（对话页），片名卡 titleCard、论文首页 paperPage、全幅图版 plate、出处角标 Sources
 │   ├── cover/              封面
 │   └── player.ts           网页播放器（进度条、章节、快捷键）
@@ -67,7 +67,8 @@ scripts/                    render · audio · snap · sheet · score-report · 
    最后一章用 `ending()`（DS 系列 `chatEnding()`）收尾**，中间每章用 `d.chapter()` 开头。
    示例片的章节（Claude：intro / cast / timeline / math / outro；DS：intro / sky / outro）只是 API 写法的范本，不是新片的结构或版式；
    前两期的完整场景在 `../ClaudeSayTransformer`（科普，13 章）和 `../ClaudeSayPaper`（论文精读，数学可视化），可以看看它们怎样为题目专门造画面。
-4. 边写边看：`npm run dev`（URL 加 `?ch=章节id` 直接跳到那一章）；`npm run snap` 截图核对版面；`npm run typecheck`。
+4. 边写边看：`npm run dev`（URL 加 `?ch=章节id` 直接跳到那一章）；`npm run snap` 截图核对版面——写完一章先拍一张总览
+   `npm run snap -- --chapter <章节id> --n 12`，几秒钟看完整章的走向，有问题的格子再按格子上的 `<章节id>+秒` 截全尺寸；`npm run typecheck`。
 5. 收尾：`npm run score`（配乐自检）→ `npm run render`（成片）→ `npm run cover`（封面）→ 补 README 的章节表。
 6. 回顾这一期新做的画面和工具：别的题目也用得上的，整理进 `src/engine/`，`npm run engine -- push` 还给框架——push 会开一个 PR 等人工审阅合并（第 9 节）。
 
@@ -119,6 +120,7 @@ export function bottleneck(d: Director) {
   中央的画面从 `Math.max(t + 0.9, w('…'))` 开始。
 - `d.cue(name, t?)`：给某个时刻起名字，配乐的拆分和铃音靠它对准画面。`opening` / `chatOpening` 自带 `hop`，`ending` / `chatEnding` 自带 `land`；`title` 由 `titleCard.reveal()` 发出。自己用 `createBanner` / `revealBanner` 做片名时，在片名完全出现的时刻手动 `d.cue('title', shown)`，否则 `music.sparkles.title` 会找不到 cue。
 - `d.hook(draw)`：重绘钩子，见下面的规矩 6。
+- `d.canvas(layer, (ctx, t) => …, { top? })`：在图层里铺一张 1920×1080 的 Canvas，每次 seek / 播放推进后按当前时刻 `t` 重画，见下面的规矩 16。
 
 ### 必须守的规矩（不守的话，拖进度条或逐帧导出时画面会错）
 
@@ -130,7 +132,8 @@ export function bottleneck(d: Director) {
 5. 同一个元素的同一个属性，两段补间不要在时间上重叠（重叠时后渲染的会盖掉前一个的收尾）。
 6. **由数算出来的图**（旋转的向量、实时读数、随参数变化的柱子）：把数放进普通对象交给 GSAP 补间，
    用 `d.hook(() => { 按当前的数重画 })` 画图。GSAP 在 seek 时不触发 `onUpdate`，不能靠它。示例片 math 章的温度 τ 就是这么做的。
-7. 随机数一律带种子：`rand(seed)`（`lib/dom`）、`rng` / `gauss` / `randn`（`lib/linalg`）。不要用 `Math.random()`。
+7. 随机数一律带种子：`rand(seed)`（`lib/dom`）、`rng` / `gauss` / `randn`（`lib/linalg`）、`hash` / `noise` / `noise2` / `fbm`（`lib/noise`）。不要用 `Math.random()`。
+   构建时一次性抽好的数据用 `rng`；在钩子里按时刻 `t` 现算的晃动、漂移用 `noise(t * 频率, 种子)`——同样的输入永远得到同样的值。
 8. 随时间换文字：`set(tl, el, { text: '0.10' }, t)`（TextPlugin，往回拖能还原，`'0.0'` 这种字符串原样保留）；
    数字滚动用 `countTo`。不要用 `textContent` 换数字字符串（GSAP 会把 `'0.0'` 当成数字 0 写回去）。
 9. 构建时别依赖文字宽度（中文字体是按需加载的子集，构建时可能还没到）；居中交给 CSS translate。
@@ -140,6 +143,11 @@ export function bottleneck(d: Director) {
 13. **按时间出现的标注**：构建期只设初始态（`hide` / `gsap.set`），真正显示要排进时间轴，用 `tl.set([line, dot], { autoAlpha: 1 }, t)` 再补间；不要只 `hide()` 后在时间轴里直接补间——线、点会在片头就亮。
 14. **裁切和 transform 不要挂在同一个元素上**：`clip-path` 用的是元素自己的坐标系，会跟着元素的 transform 一起动。给同一个 `<g>` 设 `clip-path`、又补间它的 `x` / `y` / `scale`，裁切框会跟着一起平移，等于没裁（表现为“门板滑出了门框”“叶片滑出了图版”）。正确做法是外层 `<g>` 只带 `clip-path`，补间内层——`plate()` 的 `clip` / `cam` 两层就是按这个结构写的。
 15. **隐藏一整组时，逐个隐藏子元素，别给父级设 `autoAlpha: 0`**：父级的 `visibility: hidden` 会通过 `visibility: inherit` 传给子元素，之后再单独让某个子元素显形也不会出现（表现为“这组东西怎么都不亮”）。构建期对子元素用 `hide(...children)`，时间轴上再分别 `set` / `fadeIn` 每个子元素。
+16. **Canvas 也走重绘钩子**：成百上千个粒子、光效不适合一个个建 DOM，画在 Canvas 上。Canvas 不进时间轴，所以每一帧都要按时刻**整张重画**：
+    `d.canvas(L, (ctx, t) => { … })`（就是 `d.hook` 外加自动清空，`t` 取自 `d.tl.time()`）；自己用 `canvas(L)` + `d.hook` 时，在钩子里先 `clear()`、再读 `d.tl.time()`。
+    画什么只能由 `t`、种子和场景里的数决定：粒子的位置写成 `t` 的函数（`hash(i)` 定起点，`noise(t * 0.2 + i)` 定漂移），不要在钩子里累加状态（“上一帧的位置 + 速度”往回拖就错了）；
+    要淡入淡出、开关的量放进普通对象交给 GSAP 补间，钩子里读它（示例片 math 章的追光：`tl.to(light, { on: 1 }, t)`，钩子里 `alpha: 0.32 * light.on`）。
+    图层或画布被 `autoAlpha` 藏起来时 `d.canvas` 自动跳过不画，不用为看不见的章节操心导出速度。
 
 ## 4. 舞台和台词
 
@@ -200,7 +208,14 @@ export function bottleneck(d: Director) {
 | `panel` | `panel` 终端风格面板（标题嵌在边框上）· `table` 数据表 |
 | `blocks` | `mblock` 矩阵“形状块”（N×d 之类） |
 | `linalg` | `rng` · `gauss` · `randn` · `matmul` · `transpose` · `softmaxRows` · `relu` · `frob` · `norm` · `trace` · `mean` · `std` · `histogram`… |
+| `noise` | `hash(n)` / `hash2(a, b)` 整数 → [0, 1) · `noise(x, seed)` 一维值噪声 [-1, 1] · `noise2(x, y, seed)` 二维 · `fbm(x, seed, octaves?)` 分形噪声（大起伏带小抖动：烛光、手持感） |
+| `canvas` | `canvas(layer, { top? })` 铺满舞台的画布，返回 `{ el, ctx, clear }`（一般用 `d.canvas`）· `halo(ctx, x, y, r, { color, alpha, squash })` 径向光晕（`squash` 压扁成地上的一摊光）· `beam(ctx, from, to, { spread, start, blur })` 体积光束 · `beamMask(from, to, …)` 同形状的遮罩 · `motes(ctx, t, { n, area, drift, rise, twinkle, mask })` 漂浮的尘埃 / 光点 · `rain(ctx, t, { n, area, speed, angle, depth, mask })` 雨（裁在 `area` 里）· `ripples(ctx, t, { area, rate, flat })` 地上的涟漪 · `bokeh(ctx, t, { colors, size })` 景深光斑 · `stars(ctx, t, { n, area, twinkle })` 星空 |
 | `colors` | `C`（当前主题的颜色，和 CSS 变量 `--clawd`、`--q`… 对应）· `mix` · `rgba` · `luma` · `diverge` / `diverge2` 发散色带 · `heat` 顺序色带 |
+
+`canvas` 里的效果都是“`t` + 种子 → 画面”的纯函数，`area` 是 `[x0, y0, x1, y1]`、`mask(x, y)` 返回 0–1 的亮度（`motes(…, { mask: beamMask(…) })` 就是光束里的尘埃）。
+颜色传 `#rrggbb`，不传就用主题色。合成方式 `op`（默认 `'lighter'`，两团光叠在一起变亮）只在画布内部生效，画布整体按普通透明度盖在 DOM 上：
+深色终端上浅色的光很好看；亮色主题（DS 系列）的白底上要换深一点的颜色、调高 alpha（DS 示例片 sky 章太阳的光晕、满天的蓝点就是这么调的）。
+光晕和 `tex` 的公式高亮 `glow` 是两回事，所以 Canvas 版叫 `halo`。胶片颗粒、暗角、遮幅这类整片的后期效果故意没有收进来，它们会和终端 / 对话页的外壳打架。
 
 **演员（`engine/actors`）**
 
@@ -282,6 +297,9 @@ music: {
 | `npm run dev` | 开发服务器 + 播放器。`?ch=章节id` / `?t=秒` 跳转，`?music=0` 关配乐 |
 | `npm run typecheck` | 类型检查 |
 | `npm run snap -- 12.5 ch:math+3` | 截图到 `shots/`（按秒，或按章节 + 偏移）；不给时刻就只打印章节表。自己起临时服务器 |
+| `npm run snap -- --chapter math,outro --n 8` | 总览图：每章均匀取 n 帧缩略图，拼成一张带标注的网格（每格写着时刻和 `章节id+秒`）→ `shots/sheet-math+outro.png`，几十帧几秒钟 |
+| `npm run snap -- --sheet 10:40:2,60:70` | 总览图，按区间取帧：`开始:结束:步长`，不写步长就在区间里均匀取 `--n` 帧，单写一个数就是一帧，逗号隔开多段。`--cols 4` 每行几格、`--scale 0.25` 缩略图比例 |
+| `npm run snap -- … --out review/a` | 输出文件名的前缀（可以带子目录）：总览图存成 `shots/review/a.png`，单张存成 `shots/review/a-t0012.50.png`。几个人 / 几个代理同时截图时各用各的前缀，互不覆盖 |
 | `npm run sheet` | `shots/` 里的截图每 4 张拼一张总览 |
 | `npm run score` | 配乐结构报告与自检 |
 | `npm run render` | 导出 `out/<slug>.mp4`（30fps，6 段并行）。`--fps 60` `--workers 8` `--from 120 --to 150 --out out/part.mp4` `--mute` `--keep-parts` |
@@ -359,7 +377,7 @@ music: {
 6. 结束后删掉临时 worktree；本地临时分支只留推送失败那一种（方便人工重推），推成功的只剩远端的，PR 上还能看到；
 7. 人工在 GitHub 上合并之后，其他项目 `npm run engine -- pull --fetch` 就能拿到。
 
-审阅 PR 时顺手跑一遍（框架的示例片同时是引擎的回归测试）：`npm run typecheck`、`npm run score`、`npm run snap -- <几个时刻>` 看截图；
+审阅 PR 时顺手跑一遍（框架的示例片同时是引擎的回归测试）：`npm run typecheck`、`npm run score`、`npm run snap -- <几个时刻>` 看截图（改动多的章拍一张总览 `--chapter <章节id>`）；
 动到导出流程时 `npm run render`；新功能最好在框架的示例片 `src/video/` 里用一次。
 引擎用到的新依赖 push 会自动写进框架的 `package.json`，不然框架那边跑不起来；两边版本号不一致的只列出来，人工决定。
 

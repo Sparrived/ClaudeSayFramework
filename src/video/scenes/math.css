@@ -26,3 +26,9 @@
   stroke: var(--dim);
   stroke-width: 2;
 }
+
+/* Canvas 那一段：光束底下的一行代码 */
+.scene-math .ma-code {
+  color: var(--dim);
+  font-size: 28px;
+}

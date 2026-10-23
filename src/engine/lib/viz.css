@@ -5,6 +5,15 @@
   overflow: visible;
   pointer-events: none;
 }
+/* Canvas 画布（lib/canvas.ts）：铺满舞台，像素和舞台坐标一一对应 */
+.cv {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1920px;
+  height: 1080px;
+  pointer-events: none;
+}
 .chip {
   translate: -50% -50%;
   display: grid;

@@ -55,7 +55,7 @@ npm run new -- WhaleSayRainbow --theme deepseek --title "彩虹是怎么来的" 
 | 开场 | 系列片头 `opening()`（敲下 claude、欢迎框、Clawd 跳出来）、片名卡 `titleCard()` |
 | 同事 | 小鲸来串门：客串演员 `d.actor()`、`d.say(…, { by })` 换人说话（气泡换色 + 名牌）、多色像素画的部件（呆毛、耳鳍、眼睛、嘴）、两个演员同台 |
 | 一条时间轴 | 章节大字、`d.say()` 的逐词对时 `w('…')`、词块 / 箭头 / 数字滚动 |
-| 公式与图表 | 论文首页 + 荧光笔、KaTeX 公式分段高亮、真算出来的热力图、D3 坐标图 + 一笔画出的曲线、重绘钩子（拖进度条也能还原的实时读数） |
+| 公式与图表 | 论文首页 + 荧光笔、KaTeX 公式分段高亮、真算出来的热力图、D3 坐标图 + 一笔画出的曲线、重绘钩子（拖进度条也能还原的实时读数）、Canvas 画布 `d.canvas()`（追光 `beam` 里飘着尘埃 `motes`） |
 | 开新的一期 | 终端面板、逐字打出命令、系列片尾 `ending()` |
 
 **DS 系列**（`src/video-deepseek/`，约 65 秒）
@@ -65,7 +65,7 @@ npm run new -- WhaleSayRainbow --theme deepseek --title "彩虹是怎么来的" 
 | 章节 | 演示的功能 |
 | :--- | :--- |
 | 开场 | 对话页片头 `chatOpening()`（首页、鲸鱼图标、提问、深度思考、小鲸从图标里蹦出来）、片名卡 |
-| 天空为什么是蓝的 | 一节小科普：亮色主题下的图形 / 公式 / 柱状图；Clawd 跳进来追问，小鲸回答 |
+| 天空为什么是蓝的 | 一节小科普：亮色主题下的图形 / 公式 / 柱状图、Canvas 光效（太阳的光晕 `halo`、满天的蓝点 `motes`）；Clawd 跳进来追问，小鲸回答 |
 | 下期见 | 对话页片尾 `chatEnding()`（发一句谢谢，回到首页） |
 
 ```bash
@@ -91,7 +91,8 @@ scripts/
 ├── engine.mjs       视频项目和框架之间同步引擎：status / diff / pull / push（开 PR 等人工审阅） / pr
 ├── render.mjs       并行逐帧导出 MP4
 ├── audio.mjs        只重做音轨
-├── snap.mjs · sheet.mjs · score-report.mjs · cover.mjs
+├── snap.mjs         截图核对：单张全尺寸，或几十帧缩略图拼成一张带标注的总览（--chapter / --sheet）
+├── sheet.mjs · score-report.mjs · cover.mjs
 └── browser.mjs · common.mjs
 ```
 
