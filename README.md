@@ -91,7 +91,8 @@ scripts/
 ├── engine.mjs       视频项目和框架之间同步引擎：status / diff / pull / push（开 PR 等人工审阅） / pr
 ├── render.mjs       并行逐帧导出 MP4
 ├── audio.mjs        只重做音轨
-├── snap.mjs · sheet.mjs · score-report.mjs · cover.mjs
+├── snap.mjs         截图核对：单张全尺寸，或几十帧缩略图拼成一张带标注的总览（--chapter / --sheet）
+├── sheet.mjs · score-report.mjs · cover.mjs
 └── browser.mjs · common.mjs
 ```
 
